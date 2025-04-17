@@ -1,5 +1,6 @@
 // app/page.jsx
 
+import HomePageProperties from '@/components/HomePageProperties'
 import Hero from '@/components/Hero'
 import InfoBoxes from '@/components/InfoBoxes'
 

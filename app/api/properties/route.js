@@ -22,10 +22,10 @@ export async function POST(request) {
   await connectDB();
 
   const sessionUser = await getSessionUser();
-  if (!sessionUser?.userId) {
+  if (!sessionUser?.user?.id) {
     return new Response("User ID is required", { status: 401 });
   }
-  const { userId } = sessionUser;
+  const userId = sessionUser.user.id;
 
   const contentType = request.headers.get("content-type") || "";
   let payload;

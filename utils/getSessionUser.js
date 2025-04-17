@@ -5,16 +5,11 @@ export const getSessionUser = async () => {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || !session.user) {
-      return null;
-    }
+    if (!session?.user?.id) return null;
 
-    return {
-      user: session.user,
-      userId: session.user.id,
-    };
+    return session;
   } catch (error) {
-    console.error(error);
+    console.error("Error in getSessionUser:", error);
     return null;
   }
 };

@@ -1,84 +1,69 @@
-'use client'
-import { FaBookmark } from "react-icons/fa";
+"use client";
+
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { FaRegBookmark, FaBookmark } from "react-icons/fa6";
 import { toast } from "react-toastify";
-import { useEffect, useState } from "react";
-import { set } from "mongoose";
 
-const BookmarkButton = ({property}) => {
-  const {data: session} = useSession();
-  const userId = session?.user?.id;
+export default function BookmarkButton({ propertyId }) {
+  const router = useRouter();
+  const { data: session } = useSession();
 
-  const [isBookmarked, setIsBokmared] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [isBookmarked, setIsBookmarked] = useState(false);
 
   useEffect(() => {
-
-    if(!userId) {
-      setLoading(false);
-      return
-    }
     const checkBookmarkStatus = async () => {
+      if (!session?.user?.id) return;
       try {
-        const res = await fetch('/api/bookmarks/check' , {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application.json'
-          },
-          body: JSON.stringify({
-            propertyId: property._id
-          })
-        })
-        if (res.status === 200) {
-          const data = await res.json();
-          setIsBokmared(data.isBookmarked)
-        }
-      } catch (error) {
-        console.log(error);
-      } finally {
-        setLoading(false)
+        const res = await fetch("/api/bookmarks/check", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ propertyId }),
+        });
+        const data = await res.json();
+        if (res.ok) setIsBookmarked(data.isBookmarked);
+      } catch (err) {
+        console.error("Failed to check bookmark status", err);
       }
     };
     checkBookmarkStatus();
-  }, [property._id, userId])
+  }, [session, propertyId]);
 
   const handleClick = async () => {
-    if(!userId) {
-      toast.error('You need to sign in to bookmark a property');
+    if (!session) {
+      toast.error("Please sign in to bookmark properties");
+      router.push("/login");
       return;
     }
 
     try {
-      const res = await fetch('/api/bookmarks' , {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application.json'
-        },
-        body: JSON.stringify({
-          propertyId: property._id
-        })
-      })
-      if (res.status === 200) {
-        const data = await res.json();
-        toast.success(data.message);
-        setIsBokmared(data.isBookmarked)
-      }
-    } catch (error) {
-      console.log(error);
-      toast.error('Something went wrong')
-    }
-  }
+      const res = await fetch("/api/bookmarks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ propertyId }),
+      });
+      const data = await res.json();
 
-  if (loading) return <p className="text-center">Loading</p>
-  return isBookmarked ? (
-    <button onClick={handleClick} className="bg-red-500 hover:bg-red-600 text-white font-bold w-full py-2 px-4 rounded-full flex items-center justify-center">
-      <FaBookmark className="mr-2" /> Remove Bookmark
-    </button>
-  ) : (
-    <button onClick={handleClick} className="bg-blue-500 hover:bg-blue-600 text-white font-bold w-full py-2 px-4 rounded-full flex items-center justify-center">
-      <FaBookmark className="mr-2" /> Bookmark Property
+      if (res.ok) {
+        toast.success(data.message);
+        setIsBookmarked(data.isBookmarked);
+      } else {
+        toast.error(data.message || "Something went wrong");
+      }
+    } catch (err) {
+      toast.error("Something went wrong");
+      console.error("Failed to update bookmark", err);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      className="p-2 rounded-full bg-white shadow text-blue-600 hover:text-blue-800"
+      title={isBookmarked ? "Remove Bookmark" : "Add Bookmark"}
+    >
+      {isBookmarked ? <FaBookmark size={22} /> : <FaRegBookmark size={22} />}
     </button>
   );
-};
-
-export default BookmarkButton; 
+}

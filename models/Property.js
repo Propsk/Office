@@ -15,19 +15,16 @@ const PropertySchema = new Schema(
     owner: {
       type: Schema.Types.ObjectId,
       ref: 'User',
-      required: true,
     },
 
     // ----- Core details -----
     name: {
       type: String,
-      required: true,
       trim: true,
     },
     type: {
       type: String,
       enum: WORKSPACE_TYPES,
-      required: true,
     },
     description: {
       type: String,
@@ -45,17 +42,14 @@ const PropertySchema = new Schema(
     // ----- Capacity & size -----
     desk_capacity: {
       type: Number,
-      required: true,
       min: 0,
     },
     rooms: {
       type: Number,
-      required: true,
       min: 0,
     },
     square_feet: {
       type: Number,
-      required: true,
       min: 0,
     },
 

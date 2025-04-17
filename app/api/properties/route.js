@@ -3,100 +3,93 @@ import Property from "@/models/Property";
 import { getSessionUser } from "@/utils/getSessionUser";
 import cloudinary from "@/config/cloudinary";
 
-//Get /api/properties
-
+// GET /api/properties
 export const GET = async (request) => {
-    try {
-        await connectDB();
+  try {
+    await connectDB();
 
-        const page = request.nextUrl.searchParams.get('page') || 1;
-        const pageSize = request.nextUrl.searchParams.get('pageSize') || 6;
+    const page = parseInt(request.nextUrl.searchParams.get("page") || "1", 10);
+    const pageSize = parseInt(request.nextUrl.searchParams.get("pageSize") || "6", 10);
+    const skip = (page - 1) * pageSize;
 
-        const skip = (page -1) * pageSize;
+    const total = await Property.countDocuments({});
+    const properties = await Property.find({}).skip(skip).limit(pageSize);
 
-        const total = await Property.countDocuments({});
+    return new Response(
+      JSON.stringify({ total, properties }),
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("❌ Failed to fetch properties:", error);
+    return new Response("Something went wrong", { status: 500 });
+  }
+};
 
-        const properties = await Property.find({}).skip(skip).limit(pageSize);
-
-        const result = {
-            total,
-            properties
-        }
-
-        return new Response(JSON.stringify(result), {
-            status: 200,
-        });
-    } catch (error) {
-        console.log(error);
-        return new Response('Something went wrong', {
-            status: 500
-        });
-    }
-}
-
-//POST request
-
+// POST /api/properties
 export const POST = async (request) => {
-    try {
-      await connectDB();
-  
-      const sessionUser = await getSessionUser();
-      if (!sessionUser || !sessionUser.userId) {
-        return new Response('User ID is required', { status: 401 });
-      }
-  
-      const { userId } = sessionUser;
-      const formData = await request.formData();
-  
-      const amenities = formData.getAll('amenities');
-      const images = formData.getAll('images').filter((image) => image.name !== '');
-  
-      const propertyData = {
-        type: formData.get('type'),
-        name: formData.get('name'),
-        description: formData.get('description'),
-        location: {
-          street: formData.get('location.street'),
-          city: formData.get('location.city'),
-          state: formData.get('location.state'),
-          zipcode: formData.get('location.zipcode')
-        },
-        beds: formData.get('beds'),
-        baths: formData.get('baths'),
-        square_feet: formData.get('square_feet'),
-        amenities,
-        rates: {
-          weekly: formData.get('rates.weekly'),
-          monthly: formData.get('rates.monthly'),
-          nightly: formData.get('rates.nightly'),
-        },
-        seller_info: {
-          name: formData.get('seller_info.name'),
-          email: formData.get('seller_info.email'),
-          phone: formData.get('seller_info.phone'),
-        },
-        owner: userId,
-      };
-  
-      // Upload all images to Cloudinary
-      const imageUploadPromises = images.map(async (image) => {
-        const buffer = await image.arrayBuffer();
-        const base64 = Buffer.from(buffer).toString('base64');
-        const result = await cloudinary.uploader.upload(`data:image/png;base64,${base64}`, {
-          folder: 'propertypulse',
-        });
-        return result.secure_url;
-      });
-  
-      const uploadedImages = await Promise.all(imageUploadPromises);
-      propertyData.images = uploadedImages;
-  
-      const newProperty = new Property(propertyData);
-      await newProperty.save();
-  
-      return Response.redirect(`${process.env.NEXTAUTH_URL}/properties/${newProperty._id}`);
-    } catch (error) {
-      console.error('❌ Failed to add property:', error);
-      return new Response('Failed to add property', { status: 500 });
+  try {
+    await connectDB();
+
+    const sessionUser = await getSessionUser();
+    if (!sessionUser?.userId) {
+      return new Response("User ID is required", { status: 401 });
     }
-  };
+    const userId = sessionUser.userId;
+
+    const formData = await request.formData();
+    // multi-value fields
+    const amenities = formData.getAll("amenities");
+    const images = formData.getAll("images").filter((f) => f.name);
+
+    // build doc
+    const propertyData = {
+      type: formData.get("type"),
+      name: formData.get("name"),
+      description: formData.get("description"),
+      location: {
+        street: formData.get("location.street"),
+        city: formData.get("location.city"),
+        state: formData.get("location.state"),
+        zipcode: formData.get("location.zipcode"),
+      },
+      beds: Number(formData.get("beds")),
+      baths: Number(formData.get("baths")),
+      square_feet: Number(formData.get("square_feet")),
+      amenities,
+      rates: {
+        weekly: Number(formData.get("rates.weekly")),
+        monthly: Number(formData.get("rates.monthly")),
+        nightly: Number(formData.get("rates.nightly")),
+      },
+      seller_info: {
+        name: formData.get("seller_info.name"),
+        email: formData.get("seller_info.email"),
+        phone: formData.get("seller_info.phone"),
+      },
+      owner: userId,
+    };
+
+    // upload images
+    const uploadPromises = images.map(async (file) => {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const b64 = buffer.toString("base64");
+      const res = await cloudinary.uploader.upload(
+        `data:image/png;base64,${b64}`,
+        { folder: "propertypulse" }
+      );
+      return res.secure_url;
+    });
+    propertyData.images = await Promise.all(uploadPromises);
+
+    // save
+    const newProp = new Property(propertyData);
+    await newProp.save();
+
+    return Response.redirect(
+      `${process.env.NEXTAUTH_URL}/properties/${newProp._id}`
+    );
+  } catch (error) {
+    console.error("❌ Failed to add property:", error);
+    return new Response("Failed to add property", { status: 500 });
+  }
+};

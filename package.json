@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@vercel/blob": "^1.0.0",
     "cloudinary": "^2.5.1",
     "mongodb": "^6.15.0",
     "mongoose": "^8.9.0",

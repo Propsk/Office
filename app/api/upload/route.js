@@ -1,72 +1,24 @@
 import { put } from '@vercel/blob';
 import { NextResponse } from 'next/server';
 
-export const POST = async (request) => {
+export async function POST(request) {
+  const formData = await request.formData();
+  const file = formData.get('file');
+
+  if (!file) {
+    return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
+  }
+
   try {
-    await connectDB();
-
-    const sessionUser = await getSessionUser();
-
-    if (!sessionUser || !sessionUser.userId) {
-      return new Response('User ID is required', { status: 401 });
-    }
-
-    const { userId } = sessionUser;
-    const formData = await request.formData();
-
-    const amenities = formData.getAll('amenities');
-    const images = formData.getAll('images').filter((image) => image.name !== '');
-
-    const propertyData = {
-      type: formData.get('type'),
-      name: formData.get('name'),
-      description: formData.get('description'),
-      location: {
-        street: formData.get('location.street'),
-        city: formData.get('location.city'),
-        state: formData.get('location.state'),
-        zipcode: formData.get('location.zipcode'),
-      },
-      beds: formData.get('beds'),
-      baths: formData.get('baths'),
-      square_feet: formData.get('square_feet'),
-      amenities,
-      rates: {
-        weekly: formData.get('rates.weekly'),
-        monthly: formData.get('rates.monthly'),
-        nightly: formData.get('rates.nightly'),
-      },
-      seller_info: {
-        name: formData.get('seller_info.name'),
-        email: formData.get('seller_info.email'),
-        phone: formData.get('seller_info.phone'),
-      },
-      owner: userId,
-    };
-
-    // Upload images to Cloudinary
-    const imageUploadPromises = images.map(async (image) => {
-      const buffer = await image.arrayBuffer();
-      const imageData = Buffer.from(buffer);
-      const base64 = imageData.toString('base64');
-
-      const result = await cloudinary.uploader.upload(
-        `data:image/png;base64,${base64}`,
-        { folder: 'propertypulse' }
-      );
-
-      return result.secure_url;
+    const blob = await put(file.name, file, {
+      access: 'public',
+      token: process.env.BLOB_READ_WRITE_TOKEN,
+      addRandomSuffix: true,
     });
 
-    const uploadedImages = await Promise.all(imageUploadPromises);
-    propertyData.images = uploadedImages;
-
-    const newProperty = new Property(propertyData);
-    await newProperty.save();
-
-    return Response.redirect(`${process.env.NEXTAUTH_URL}/properties/${newProperty._id}`);
+    return NextResponse.json({ url: blob.url });
   } catch (error) {
-    console.error('Failed to add property:', error);
-    return new Response('Failed to add property', { status: 500 });
+    console.error('Upload failed:', error);
+    return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
   }
-};
+}

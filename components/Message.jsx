@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useGlobalContext } from "@/context/GlobalContext";
 import { useState } from "react";

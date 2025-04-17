@@ -1,3 +1,4 @@
+"use client";
 import { useState } from "react";
 import { FaFontAwesomeAlt, FaPaperPlane } from "react-icons/fa";
 import { toast } from "react-toastify";

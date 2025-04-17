@@ -1,10 +1,13 @@
 "use client";
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { toast } from 'react-toastify'
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'react-toastify';
 
 const PropertyAddForm = () => {
-  const router = useRouter()
+  const router = useRouter();
+  const [images, setImages] = useState([]);
+  const [previews, setPreviews] = useState([]);
   const [fields, setFields] = useState({
     type: '',
     name: '',
@@ -23,98 +26,118 @@ const PropertyAddForm = () => {
       weekly: '',
       monthly: '',
     },
-  })
+  });
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target
+    const { name, value, type, checked } = e.target;
     if (name.startsWith('location.')) {
-      const locField = name.split('.')[1]
+      const locField = name.split('.')[1];
       setFields((prev) => ({
         ...prev,
         location: {
           ...prev.location,
           [locField]: value,
         },
-      }))
+      }));
     } else if (name.startsWith('rates.')) {
-      const rateField = name.split('.')[1]
+      const rateField = name.split('.')[1];
       setFields((prev) => ({
         ...prev,
         rates: {
           ...prev.rates,
           [rateField]: value,
         },
-      }))
+      }));
     } else if (name === 'amenities') {
       if (checked) {
         setFields((prev) => ({
           ...prev,
           amenities: [...prev.amenities, value],
-        }))
+        }));
       } else {
         setFields((prev) => ({
           ...prev,
           amenities: prev.amenities.filter((a) => a !== value),
-        }))
+        }));
       }
     } else {
-      setFields((prev) => ({ ...prev, [name]: value }))
+      setFields((prev) => ({ ...prev, [name]: value }));
     }
-  }
+  };
+
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    setImages(files);
+
+    const previewUrls = files.map((file) => URL.createObjectURL(file));
+    setPreviews(previewUrls);
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
+    let uploadedUrls = [];
+
+    if (images.length) {
+      for (const img of images) {
+        const fileData = new FormData();
+        fileData.append('file', img);
+
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: fileData,
+        });
+
+        if (res.ok) {
+          const { url } = await res.json();
+          uploadedUrls.push(url);
+        } else {
+          toast.error('Image upload failed');
+          return;
+        }
+      }
+    }
+
+    const propertyData = { ...fields, images: uploadedUrls };
+
     const res = await fetch('/api/properties', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(fields),
-    })
+      body: JSON.stringify(propertyData),
+    });
 
     if (res.ok) {
-      toast.success('Workspace added successfully!')
-      router.push('/properties')
+      toast.success('Workspace added successfully!');
+      router.push('/properties');
     } else {
-      toast.error('Something went wrong')
+      toast.error('Something went wrong');
     }
-  }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="max-w-2xl mx-auto p-6 bg-white shadow-md rounded">
       <h2 className="text-3xl text-center font-semibold mb-6">Add Workspace</h2>
 
       <div className="mb-4">
-        <label htmlFor="type" className="block text-gray-700 font-bold mb-2">
-          Workspace Type
-        </label>
-        <select
-          id="type"
-          name="type"
-          className="border rounded w-full py-2 px-3"
-          required
-          value={fields.type}
-          onChange={handleChange}
-        >
-          <option value="">-- Select Type --</option>
-          <option value="Hot Desk">Hot Desk</option>
-          <option value="Dedicated Desk">Dedicated Desk</option>
-          <option value="Private Office">Private Office</option>
-          <option value="Meeting Room">Meeting Room</option>
-          <option value="Whole Office">Entire Office</option>
-        </select>
-      </div>
-
-      <div className="mb-4">
-        <label className="block text-gray-700 font-bold mb-2">Workspace Name</label>
+        <label className="block text-gray-700 font-bold mb-2">Upload Images</label>
         <input
-          type="text"
-          id="name"
-          name="name"
-          className="border rounded w-full py-2 px-3 mb-2"
-          placeholder="e.g. Private Office - Tamworth Road"
-          required
-          value={fields.name}
-          onChange={handleChange}
+          type="file"
+          multiple
+          accept="image/*"
+          onChange={handleImageChange}
+          className="w-full border px-3 py-2 rounded"
         />
+        {previews.length > 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+            {previews.map((src, idx) => (
+              <img
+                key={idx}
+                src={src}
+                alt={`Preview ${idx + 1}`}
+                className="w-full h-32 object-cover rounded"
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="mb-4">

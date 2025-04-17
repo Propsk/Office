@@ -17,6 +17,7 @@ const PropertyEditForm = () => {
     beds: '',
     baths: '',
     amenities: [],
+    images: [],
     rates: {
       daily: '',
       weekly: '',
@@ -26,6 +27,9 @@ const PropertyEditForm = () => {
     seller_email: '',
     seller_phone: '',
   });
+
+  const [newImages, setNewImages] = useState([]);
+  const [previews, setPreviews] = useState([]);
 
   useEffect(() => {
     const getProperty = async () => {
@@ -37,6 +41,7 @@ const PropertyEditForm = () => {
           weekly: property.rates?.weekly || '',
           monthly: property.rates?.monthly || '',
         },
+        images: property.images || [],
       });
     };
     getProperty();
@@ -74,14 +79,41 @@ const PropertyEditForm = () => {
     }
   };
 
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    setNewImages(files);
+    setPreviews(files.map((file) => URL.createObjectURL(file)));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    let uploadedUrls = [...formData.images];
+
+    if (newImages.length) {
+      for (const img of newImages) {
+        const fileData = new FormData();
+        fileData.append('file', img);
+
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: fileData,
+        });
+
+        if (res.ok) {
+          const { url } = await res.json();
+          uploadedUrls.push(url);
+        }
+      }
+    }
+
+    const updatedData = { ...formData, images: uploadedUrls };
+
     const res = await fetch(`/api/properties/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(formData),
+      body: JSON.stringify(updatedData),
     });
 
     if (res.ok) {
@@ -92,6 +124,29 @@ const PropertyEditForm = () => {
   return (
     <form onSubmit={handleSubmit} className="max-w-3xl mx-auto p-6 bg-white shadow rounded">
       <h2 className="text-3xl font-semibold mb-6 text-center">Edit Workspace</h2>
+
+      <div className="mb-4">
+        <label className="block font-semibold mb-1">Upload Additional Images</label>
+        <input
+          type="file"
+          multiple
+          accept="image/*"
+          onChange={handleImageChange}
+          className="w-full border px-3 py-2 rounded"
+        />
+        {previews.length > 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+            {previews.map((src, idx) => (
+              <img
+                key={idx}
+                src={src}
+                alt={`Preview ${idx + 1}`}
+                className="w-full h-32 object-cover rounded"
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
       <div className="mb-4">
         <label className="block font-semibold mb-1">Workspace Type</label>

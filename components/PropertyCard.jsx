@@ -1,88 +1,80 @@
-import React from 'react'
+import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import {FaBed, FaBath, FaRulerCombined, FaMoneyBill, FaMapMarker} from 'react-icons/fa'
+import {
+  FaChair,
+  FaDoorOpen,
+  FaRulerCombined,
+  FaMoneyBill,
+  FaMapMarker,
+  FaWifi,
+  FaPrint,
+  FaUtensils,
+  FaUsers
+} from 'react-icons/fa';
 
-const PropertyCard = ({ property}) => {
-    const getRateDisplay = () => {
-        const {rates} = property;
-        
-        if (rates.monthly) {
-            return `${rates.monthly.toLocaleString()}/mo`
-        } else if (rates.weekly) {
-            return `${rates.weekly.toLocaleString()}/wk`
-        } else if (rates.nightly) {
-            return `${rates.nightly.toLocaleString()}/night`
-        }
-    }
+const PropertyCard = ({ property }) => {
+  const getRateDisplay = () => {
+    const { rates } = property;
+    if (rates.monthly) return `£${rates.monthly.toLocaleString()}/mo`;
+    if (rates.weekly) return `£${rates.weekly.toLocaleString()}/wk`;
+    if (rates.daily) return `£${rates.daily.toLocaleString()}/day`;
+    return 'Contact for pricing';
+  };
+
   return (
-    <div className="rounded-xl shadow-md relative">
-            <Image
-              src={property.images[0]}
-              alt=""
-              height={0}
-              width={0}
-              sizes='100vw'
-              className="w-full h-auto rounded-t-xl"
-            />
-            <div className="p-4">
-              <div className="text-left md:text-center lg:text-left mb-6">
-                <div className="text-gray-600">{property.type}</div>
-                <h3 className="text-xl font-bold">{property.name}</h3>
-              </div>
-              <h3
-                className="absolute top-[10px] right-[10px] bg-white px-4 py-2 rounded-lg text-blue-500 font-bold text-right md:text-center lg:text-right"
-              >
-                ${getRateDisplay()}
-              </h3>
+    <div className="rounded-xl shadow-md relative overflow-hidden">
+      <Image
+        src={property.images?.[0] || '/default-office.jpg'}
+        alt={property.name || 'Workspace Image'}
+        height={0}
+        width={0}
+        sizes="100vw"
+        className="w-full h-48 object-cover rounded-t-xl"
+      />
 
-              <div className="flex justify-center gap-4 text-gray-500 mb-4">
-                <p>
-                  <FaBed className='inline mr-2'/> {property.beds} {' '}
-                  <span className="md:hidden lg:inline">Beds</span>
-                </p>
-                <p>
-                  <FaBath className='inline mr-2'/>{property.baths} {' '}
-                  <span className="md:hidden lg:inline">Baths</span>
-                </p>
-                <p>
-                <FaRulerCombined className='inline mr-2'/>
-                  {property.square_feet} <span className="md:hidden lg:inline">sqft</span>
-                </p>
-              </div>
+      <div className="p-4">
+        <div className="text-left md:text-center lg:text-left mb-4">
+          <div className="text-sm text-gray-500">{property.type}</div>
+          <h3 className="text-xl font-bold text-gray-800">{property.name}</h3>
+        </div>
 
-              <div
-                className="flex justify-center gap-4 text-green-900 text-sm mb-4"
-              > 
-              { property.rates.nightly && (
-                <p><FaMoneyBill className='inline mr-2'/> Nightly</p>
-              )}
-              { property.rates.monthly && (
-                <p><FaMoneyBill className='inline mr-2'/> Monthly</p>
-              )}
-              { property.rates.weekly && (
-                <p><FaMoneyBill className='inline mr-2'/> Weekly</p>
-              )}
-                
-              </div>
+        <h3 className="absolute top-2 right-2 bg-white px-3 py-1 rounded-full text-blue-600 font-bold shadow">
+          {getRateDisplay()}
+        </h3>
 
-              <div className="border border-gray-100 mb-5"></div>
+        <div className="flex justify-center gap-4 text-gray-600 text-sm mb-3">
+          <p><FaChair className="inline mr-1" /> {property.beds || 0} Desks</p>
+          <p><FaDoorOpen className="inline mr-1" /> {property.baths || 0} Rooms</p>
+          <p><FaRulerCombined className="inline mr-1" /> {property.square_feet || 0} sqft</p>
+        </div>
 
-              <div className="flex flex-col lg:flex-row justify-between mb-4">
-                <div className="flex align-middle gap-2 mb-4 lg:mb-0">
-                <FaMapMarker className='text-orange-700'/>
-                  <span className="text-orange-700"> {property.location.city} {property.location.state} </span>
-                </div>
-                <Link
-                  href= {`/properties/${property._id}`}
-                  className="h-[36px] bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-center text-sm"
-                >
-                  Details
-                </Link>
-              </div>
-            </div>
+        {property.amenities && property.amenities.length > 0 && (
+          <div className="flex flex-wrap gap-2 justify-center text-xs text-gray-500 mb-4">
+            {property.amenities.includes('Wi-Fi') && <span><FaWifi className="inline mr-1" />Wi-Fi</span>}
+            {property.amenities.includes('Printing') && <span><FaPrint className="inline mr-1" />Printing</span>}
+            {property.amenities.includes('Kitchen') && <span><FaUtensils className="inline mr-1" />Kitchen</span>}
+            {property.amenities.includes('Meeting Room') && <span><FaUsers className="inline mr-1" />Meeting Room</span>}
           </div>
-  )
-}
+        )}
 
-export default PropertyCard
+        <div className="border-t border-gray-200 my-4"></div>
+
+        <div className="flex flex-col lg:flex-row justify-between items-center text-sm">
+          <div className="flex items-center text-orange-700 gap-2">
+            <FaMapMarker />
+            <span>{property.location?.city}, {property.location?.state}</span>
+          </div>
+          <Link
+            href={`/properties/${property._id}`}
+            className="mt-2 lg:mt-0 h-[36px] bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg"
+          >
+            View Workspace
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default PropertyCard;

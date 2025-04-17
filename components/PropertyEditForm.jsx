@@ -1,605 +1,277 @@
-'use client'
-import React from 'react';
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { toast } from 'react-toastify';
+import { useEffect, useState } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import { fetchProperty } from '@/utils/requests';
 
 const PropertyEditForm = () => {
+  const router = useRouter();
+  const params = useParams();
+  const { id } = params;
 
-    const {id} = useParams();
-    const router = useRouter();
+  const [formData, setFormData] = useState({
+    type: '',
+    name: '',
+    description: '',
+    location: '',
+    square_feet: '',
+    beds: '',
+    baths: '',
+    amenities: [],
+    rates: {
+      daily: '',
+      weekly: '',
+      monthly: '',
+    },
+    seller_name: '',
+    seller_email: '',
+    seller_phone: '',
+  });
 
-    const [mounted, setMounted] = useState(false);
-    const [fields, setFields] = useState({
-        type: '',
-        name: '',
-        description: '',
-        location: {
-            street: '',
-            city: '',
-            state: '',
-            zipcode: '',
-        },
-        beds: '',
-        baths: '',
-        square_feet: '',
-        amenities: [''],
+  useEffect(() => {
+    const getProperty = async () => {
+      const property = await fetchProperty(id);
+      setFormData({
+        ...property,
         rates: {
-            weekly: '',
-            monthly: '',
-            nightly: '',
-
+          daily: property.rates?.daily || '',
+          weekly: property.rates?.weekly || '',
+          monthly: property.rates?.monthly || '',
         },
-        seller_info: {
-            name: '',
-            email: '',
-            phone: '',
-        }
+      });
+    };
+    getProperty();
+  }, [id]);
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+
+    if (name.startsWith('rates.')) {
+      const rateField = name.split('.')[1];
+      setFormData((prev) => ({
+        ...prev,
+        rates: {
+          ...prev.rates,
+          [rateField]: value,
+        },
+      }));
+    } else if (name === 'amenities') {
+      if (checked) {
+        setFormData((prev) => ({
+          ...prev,
+          amenities: [...prev.amenities, value],
+        }));
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          amenities: prev.amenities.filter((a) => a !== value),
+        }));
+      }
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const res = await fetch(`/api/properties/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(formData),
     });
 
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        setMounted(true);
-
-        // Fetch property data for form
-        const fetchPropertyData = async () => {
-            try {
-                const propertyData = await fetchProperty(id);
-
-                // Check rates for NULL values, if so then make empty string.
-
-                if(propertyData && propertyData.rates) {
-                    const defaultRates = { ...propertyData.rates };
-                    for (const rate in defaultRates) {
-                        if(defaultRates[rate] === null) {
-                            defaultRates[rate] = '';
-                        }
-                    }
-                    propertyData.rates = defaultRates;
-                }
-                setFields(propertyData)
-            } catch (error) {
-                console.error(error);
-            } finally {
-                setLoading(false)
-            }
-        };
-
-        fetchPropertyData()
-    }, []);
-
-    const handleChange = (e) => {
-      const { name, value } = e.target;
-
-      //check if nested property
-      if (name.includes('.')) {
-        const [outerKey, innerkey] = name.split('.');
-
-        setFields((prevFields) => ( {
-          ...prevFields,
-          [outerKey]: {
-            ...prevFields[outerKey], // Preserve other properties in owner (e.g., lastName)
-            [innerkey]: value // Update the specific innerkey (firstName) with the new value
-          }
-        }))
-      } else {
-        setFields((prevFields) => ({ 
-          ...prevFields,
-          [name]: value
-        }))
-      }
-
-
-     };
-    const handleAmenitiesChange = (e) => {
-      const {value, checked} = e.target; 
-
-      //clone the current array
-      const updatedAmenities = [...fields.amenities];
-
-      if (checked) {
-        //add value to array
-        updatedAmenities.push(value);
-      } else {
-        //remove value from array
-        const index = updatedAmenities.indexOf(value);
-
-        if (index!== -1 ) {
-          updatedAmenities.splice(index, 1)
-        }
-      }
-      setFields ((prevFields) => ({
-        ...prevFields,
-        amenities: updatedAmenities
-      }))
-     };
-
-
-    const handleSubmit = async (e) => {
-      e.preventDefault();
-
-      try {
-        const formData = new FormData(e.target);
-
-        const res = await fetch(`/api/properties/${id}`, {
-          method: 'PUT',
-          body: formData
-        });
-
-        if (res.status === 200) {
-          router.push(`/properties/${id}`);
-        } else if(res.status === 401 || res.status === 403) {
-          toast.error('Permission Denied')
-        } else {
-          toast.error('Something went wrong');
-        }
-      } catch (error) {
-        toast.error('Something went wrong');
-        console.log(error)
-      }
-
+    if (res.ok) {
+      router.push('/properties');
     }
+  };
 
-  return mounted && !loading && 
-    <form onSubmit={handleSubmit}> 
-            <h2 className="text-3xl text-center font-semibold mb-6">
-              Edit Property
-            </h2>
- 
-            <div className="mb-4">
-              <label htmlFor="type" className="block text-gray-700 font-bold mb-2"
-                >Property Type</label
-              >
-              <select
-                id="type"
-                name="type"
-                className="border rounded w-full py-2 px-3"
-                required
-                value= {fields.type}
-                onChange={handleChange}
-              >
-                <option value="Apartment">Apartment</option>
-                <option value="Condo">Condo</option>
-                <option value="House">House</option>
-                <option value="CabinOrCottage">Cabin or Cottage</option>
-                <option value="Room">Room</option>
-                <option value="Studio">Studio</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 font-bold mb-2"
-                >Listing Name</label
-              >
-              <input
-                type="text"
-                id="name"
-                name="name"
-                className="border rounded w-full py-2 px-3 mb-2"
-                placeholder="eg. Beautiful Apartment In Miami"
-                required
-                value= {fields.name}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="mb-4">
-              <label
-                htmlFor="description"
-                className="block text-gray-700 font-bold mb-2"
-                >Description</label
-              >
-              <textarea
-                id="description"
-                name="description"
-                className="border rounded w-full py-2 px-3"
-                rows="4"
-                placeholder="Add an optional description of your property"
-                value= {fields.description}
-                onChange={handleChange}
-              ></textarea>
-            </div>
+  return (
+    <form onSubmit={handleSubmit} className="max-w-3xl mx-auto p-6 bg-white shadow rounded">
+      <h2 className="text-3xl font-semibold mb-6 text-center">Edit Workspace</h2>
 
-            <div className="mb-4 bg-blue-50 p-4">
-              <label className="block text-gray-700 font-bold mb-2">Location</label>
-              <input
-                type="text"
-                id="street"
-                name="location.street"
-                className="border rounded w-full py-2 px-3 mb-2"
-                placeholder="Street"
-                value= {fields.location.street}
-                onChange={handleChange}
-              />
-              <input
-                type="text"
-                id="city"
-                name="location.city"
-                className="border rounded w-full py-2 px-3 mb-2"
-                placeholder="City"
-                required
-                value= {fields.location.city}
-                onChange={handleChange}
-              />
-              <input
-                type="text"
-                id="state"
-                name="location.state"
-                className="border rounded w-full py-2 px-3 mb-2"
-                placeholder="State"
-                required
-                value= {fields.location.state}
-                onChange={handleChange}
-              />
-              <input
-                type="text"
-                id="zipcode"
-                name="location.zipcode"
-                className="border rounded w-full py-2 px-3 mb-2"
-                placeholder="Zipcode"
-                value= {fields.location.zipcode}
-                onChange={handleChange}
-              />
-            </div>
+      <div className="mb-4">
+        <label className="block font-semibold mb-1">Workspace Type</label>
+        <select
+          name="type"
+          value={formData.type}
+          onChange={handleChange}
+          className="w-full border px-3 py-2 rounded"
+        >
+          <option value="">-- Select --</option>
+          <option value="Hot Desk">Hot Desk</option>
+          <option value="Dedicated Desk">Dedicated Desk</option>
+          <option value="Private Office">Private Office</option>
+          <option value="Meeting Room">Meeting Room</option>
+          <option value="Whole Office">Entire Office</option>
+        </select>
+      </div>
 
-            <div className="mb-4 flex flex-wrap">
-              <div className="w-full sm:w-1/3 pr-2">
-                <label htmlFor="beds" className="block text-gray-700 font-bold mb-2"
-                  >Beds</label
-                >
-                <input
-                  type="number"
-                  id="beds"
-                  name="beds"
-                  className="border rounded w-full py-2 px-3"
-                  required
-                  value= {fields.beds}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="w-full sm:w-1/3 px-2">
-                <label htmlFor="baths" className="block text-gray-700 font-bold mb-2"
-                  >Baths</label
-                >
-                <input
-                  type="number"
-                  id="baths"
-                  name="baths"
-                  className="border rounded w-full py-2 px-3"
-                  required
-                  value= {fields.baths}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="w-full sm:w-1/3 pl-2">
-                <label
-                  htmlFor="square_feet"
-                  className="block text-gray-700 font-bold mb-2"
-                  >Square Feet</label
-                >
-                <input
-                  type="number"
-                  id="square_feet"
-                  name="square_feet"
-                  className="border rounded w-full py-2 px-3"
-                  required
-                  value= {fields.square_feet}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
+      <div className="mb-4">
+        <label className="block font-semibold mb-1">Workspace Name</label>
+        <input
+          type="text"
+          name="name"
+          value={formData.name}
+          onChange={handleChange}
+          className="w-full border px-3 py-2 rounded"
+        />
+      </div>
 
-            <div className="mb-4">
-              <label className="block text-gray-700 font-bold mb-2"
-                >Amenities</label
-              >
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                <div>
-                  <input
-                    type="checkbox"
-                    id="amenity_wifi"
-                    name="amenities"
-                    value="Wifi"
-                    className="mr-2"
-                    checked = {fields.amenities.includes('Wifi')}
-                    onChange={handleAmenitiesChange}
-                  />
-                  <label htmlFor="amenity_wifi">Wifi</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    id="amenity_kitchen"
-                    name="amenities"
-                    value="Full kitchen"
-                    className="mr-2"
-                    checked = {fields.amenities.includes('Full kitchen')}
-                    onChange={handleAmenitiesChange}
-                  />
-                  <label htmlFor="amenity_kitchen">Full kitchen</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    id="amenity_washer_dryer"
-                    name="amenities"
-                    value="Washer & Dryer"
-                    className="mr-2"
-                    checked = {fields.amenities.includes('Washer & Dryer')}
-                    onChange={handleAmenitiesChange}
-                  />
-                  <label htmlFor="amenity_washer_dryer">Washer & Dryer</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    id="amenity_free_parking"
-                    name="amenities"
-                    value="Free Parking"
-                    className="mr-2"
-                    checked = {fields.amenities.includes('Free Parking')}
-                    onChange={handleAmenitiesChange}
-                  />
-                  <label htmlFor="amenity_free_parking">Free Parking</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    id="amenity_pool"
-                    name="amenities"
-                    value="Swimming Pool"
-                    className="mr-2"
-                    checked = {fields.amenities.includes('Swimming Pool')}
-                    onChange={handleAmenitiesChange}
-                  />
-                  <label htmlFor="amenity_pool">Swimming Pool</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    id="amenity_hot_tub"
-                    name="amenities"
-                    value="Hot Tub"
-                    className="mr-2"
-                    checked = {fields.amenities.includes('Hot Tub')}
-                    onChange={handleAmenitiesChange}
-                  />
-                  <label htmlFor= "amenity_hot_tub">Hot Tub</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    id="amenity_24_7_security"
-                    name="amenities"
-                    value="24/7 Security"
-                    className="mr-2"
-                    checked = {fields.amenities.includes('24/7 Security')}
-                    onChange={handleAmenitiesChange}
-                  />
-                  <label htmlFor="amenity_24_7_security">24/7 Security</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    id="amenity_wheelchair_accessible"
-                    name="amenities"
-                    value="Wheelchair Accessible"
-                    className="mr-2"
-                    checked = {fields.amenities.includes('Wheelchair Accessible')}
-                    onChange={handleAmenitiesChange}
-                  />
-                  <label htmlFor="amenity_wheelchair_accessible"
-                    >Wheelchair Accessible</label
-                  >
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    id="amenity_elevator_access"
-                    name="amenities"
-                    value="Elevator Access"
-                    className="mr-2"
-                    checked = {fields.amenities.includes('Elevator Access')}
-                    onChange={handleAmenitiesChange}
-                  />
-                  <label htmlFor="amenity_elevator_access">Elevator Access</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    id="amenity_dishwasher"
-                    name="amenities"
-                    value="Dishwasher"
-                    className="mr-2"
-                    checked = {fields.amenities.includes('Dishwasher')}
-                    onChange={handleAmenitiesChange}
-                  />
-                  <label htmlFor="amenity_dishwasher">Dishwasher</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    id="amenity_gym_fitness_center"
-                    name="amenities"
-                    value="Gym/Fitness Center"
-                    className="mr-2"
-                    checked = {fields.amenities.includes('Gym/Fitness Center')}
-                    onChange={handleAmenitiesChange}
-                  />
-                  <label htmlFor="amenity_gym_fitness_center"
-                    >Gym/Fitness Center</label
-                  >
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    id="amenity_air_conditioning"
-                    name="amenities"
-                    value="Air Conditioning"
-                    className="mr-2"
-                    checked = {fields.amenities.includes('Air Conditioning')}
-                    onChange={handleAmenitiesChange}
-                  />
-                  <label htmlFor="amenity_air_conditioning">Air Conditioning</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    id="amenity_balcony_patio"
-                    name="amenities"
-                    value="Balcony/Patio"
-                    className="mr-2"
-                    checked = {fields.amenities.includes('Balcony/Patio')}
-                    onChange={handleAmenitiesChange}
-                  />
-                  <label htmlFor="amenity_balcony_patio">Balcony/Patio</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    id="amenity_smart_tv"
-                    name="amenities"
-                    value="Smart TV"
-                    className="mr-2"
-                    checked = {fields.amenities.includes('Smart TV')}
-                    onChange={handleAmenitiesChange}
-                  />
-                  <label htmlFor="amenity_smart_tv">Smart TV</label>
-                </div>
-                <div>
-                  <input
-                    type="checkbox"
-                    id="amenity_coffee_maker"
-                    name="amenities"
-                    value="Coffee Maker"
-                    className="mr-2"
-                    checked = {fields.amenities.includes('Coffee Maker')}
-                    onChange={handleAmenitiesChange}
-                  />
-                  <label htmlFor="amenity_coffee_maker">Coffee Maker</label>
-                </div>
-              </div>
-            </div>
+      <div className="mb-4">
+        <label className="block font-semibold mb-1">Description</label>
+        <textarea
+          name="description"
+          value={formData.description}
+          onChange={handleChange}
+          className="w-full border px-3 py-2 rounded"
+          rows="4"
+        ></textarea>
+      </div>
 
-            <div className="mb-4 bg-blue-50 p-4">
-              <label className="block text-gray-700 font-bold mb-2"
-                >Rates (Leave blank if not applicable)</label
-              >
-              <div
-                className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4"
-              >
-                <div className="flex items-center">
-                  <label htmlFor="weekly_rate" className="mr-2">Weekly</label>
-                  <input
-                    type="number"
-                    id="weekly_rate"
-                    name="rates.weekly"
-                    className="border rounded w-full py-2 px-3"
-                    value= {fields.rates.weekly}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="flex items-center">
-                  <label htmlFor="monthly_rate" className="mr-2">Monthly</label>
-                  <input
-                    type="number"
-                    id="monthly_rate"
-                    name="rates.monthly"
-                    className="border rounded w-full py-2 px-3"
-                    value= {fields.rates.monthly}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="flex items-center">
-                  <label htmlFor="nightly_rate" className="mr-2">Nightly</label>
-                  <input
-                    type="number"
-                    id="nightly_rate"
-                    name="rates.nightly"
-                    className="border rounded w-full py-2 px-3"
-                    value= {fields.rates.nightly}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-            </div>
+      <div className="mb-4">
+        <label className="block font-semibold mb-1">Location</label>
+        <input
+          type="text"
+          name="location"
+          value={formData.location}
+          onChange={handleChange}
+          className="w-full border px-3 py-2 rounded"
+        />
+      </div>
 
-            <div className="mb-4">
-              <label
-                htmlFor="seller_name"
-                className="block text-gray-700 font-bold mb-2"
-                >Seller Name</label
-              >
+      <div className="mb-4">
+        <label className="block font-semibold mb-1">Square Feet</label>
+        <input
+          type="number"
+          name="square_feet"
+          value={formData.square_feet}
+          onChange={handleChange}
+          className="w-full border px-3 py-2 rounded"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="mb-4">
+          <label className="block font-semibold mb-1">Desk Capacity</label>
+          <input
+            type="number"
+            name="beds"
+            value={formData.beds}
+            onChange={handleChange}
+            className="w-full border px-3 py-2 rounded"
+          />
+        </div>
+
+        <div className="mb-4">
+          <label className="block font-semibold mb-1">Private Rooms</label>
+          <input
+            type="number"
+            name="baths"
+            value={formData.baths}
+            onChange={handleChange}
+            className="w-full border px-3 py-2 rounded"
+          />
+        </div>
+      </div>
+
+      <div className="mb-4">
+        <label className="block font-semibold mb-1">Amenities</label>
+        <div className="grid grid-cols-2 gap-2">
+          {['Wi-Fi', 'Kitchen', 'Meeting Room', 'Parking', 'Air Conditioning', 'Printing'].map((amenity) => (
+            <label key={amenity} className="flex items-center">
               <input
-                type="text"
-                id="seller_name"
-                name="seller_info.name"
-                className="border rounded w-full py-2 px-3"
-                placeholder="Name"
-                value= {fields.seller_info.name}
+                type="checkbox"
+                name="amenities"
+                value={amenity}
+                checked={formData.amenities.includes(amenity)}
                 onChange={handleChange}
+                className="mr-2"
               />
-            </div>
-            <div className="mb-4">
-              <label
-                htmlFor="seller_email"
-                className="block text-gray-700 font-bold mb-2"
-                >Seller Email</label
-              >
-              <input
-                type="email"
-                id="seller_email"
-                name="seller_info.email"
-                className="border rounded w-full py-2 px-3"
-                placeholder="Email address"
-                required
-                value= {fields.seller_info.email}
-                onChange={handleChange}
-              />
-            </div>
-            <div className="mb-4">
-              <label
-                htmlFor="seller_phone"
-                className="block text-gray-700 font-bold mb-2"
-                >Seller Phone</label
-              >
-              <input
-                type="tel"
-                id="seller_phone"
-                name="seller_info.phone"
-                className="border rounded w-full py-2 px-3"
-                placeholder="Phone"
-                value= {fields.seller_info.phone}
-                onChange={handleChange}
-              />
-            </div>
+              {amenity}
+            </label>
+          ))}
+        </div>
+      </div>
 
-            {/* <div className="mb-4">
-              <label htmlFor="images" className="block text-gray-700 font-bold mb-2"
-                >Images (Select up to 4 images)</label
-              >
-              <input
-                type="file"
-                id="images"
-                name="images"
-                className="border rounded w-full py-2 px-3"
-                accept="image/*"
-                multiple
-                required
-                onChange={handleImageChange}
-              />
-            </div> */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+        <div>
+          <label className="block font-semibold mb-1">Daily Rate (£)</label>
+          <input
+            type="number"
+            name="rates.daily"
+            value={formData.rates.daily}
+            onChange={handleChange}
+            className="w-full border px-3 py-2 rounded"
+          />
+        </div>
+        <div>
+          <label className="block font-semibold mb-1">Weekly Rate (£)</label>
+          <input
+            type="number"
+            name="rates.weekly"
+            value={formData.rates.weekly}
+            onChange={handleChange}
+            className="w-full border px-3 py-2 rounded"
+          />
+        </div>
+        <div>
+          <label className="block font-semibold mb-1">Monthly Rate (£)</label>
+          <input
+            type="number"
+            name="rates.monthly"
+            value={formData.rates.monthly}
+            onChange={handleChange}
+            className="w-full border px-3 py-2 rounded"
+          />
+        </div>
+      </div>
 
-            <div>
-              <button
-                className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full w-full focus:outline-none focus:shadow-outline"
-                type="submit"
-              >
-                Update
-              </button>
-            </div>
-          </form>
-}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div>
+          <label className="block font-semibold mb-1">Contact Name</label>
+          <input
+            type="text"
+            name="seller_name"
+            value={formData.seller_name}
+            onChange={handleChange}
+            className="w-full border px-3 py-2 rounded"
+          />
+        </div>
+        <div>
+          <label className="block font-semibold mb-1">Contact Email</label>
+          <input
+            type="email"
+            name="seller_email"
+            value={formData.seller_email}
+            onChange={handleChange}
+            className="w-full border px-3 py-2 rounded"
+          />
+        </div>
+        <div>
+          <label className="block font-semibold mb-1">Phone</label>
+          <input
+            type="tel"
+            name="seller_phone"
+            value={formData.seller_phone}
+            onChange={handleChange}
+            className="w-full border px-3 py-2 rounded"
+          />
+        </div>
+      </div>
 
-export default PropertyEditForm
+      <div className="text-center">
+        <button
+          type="submit"
+          className="bg-blue-600 text-white py-2 px-6 rounded hover:bg-blue-700"
+        >
+          Update Workspace
+        </button>
+      </div>
+    </form>
+  );
+};
+
+export default PropertyEditForm;

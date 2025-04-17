@@ -11,10 +11,10 @@ const Hero = () => {
           <h1
             className="text-4xl font-extrabold text-white sm:text-5xl md:text-6xl"
           >
-            Find The Perfect Rental
+            Offices from £199 a month
           </h1>
           <p className="my-4 text-xl text-white">
-            Discover the perfect property that suits your needs.
+            Rent a desk in Long Eaton or a whole office.
           </p>
         </div>
         {/* <!-- Form Component --> */}

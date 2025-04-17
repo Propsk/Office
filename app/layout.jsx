@@ -8,9 +8,9 @@ import { GlobalProvider } from "@/context/GlobalContext";
 import 'photoswipe/dist/photoswipe.css' 
 
 export const metadata = {
-  title: "PropertyPulse | Find the Perfect Rental",
-  description: "Find your dream rental property",
-  keywords: "rental, find rentals, find properties",
+  title: "RentOfficeSpace.co.uk | Find an office in Long Eaton",
+  description: "Affordable desks and offices to rent in Derbyshire",
+  keywords: "office, coworking, Long Eaton",
 };
 
 const MainLayout = ({ children }) => {

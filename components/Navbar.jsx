@@ -71,11 +71,11 @@ const Navbar = () => {
               <Image
                 className="h-10 w-auto"
                 src= { logo }
-                alt="PropertyPulse"
+                alt="RentOfficeSpace.co.uk"
               />
 
               <span className="hidden md:block text-white text-2xl font-bold ml-2"
-                >PropertyPulse</span
+                >RentOfficeSpace.co.uk</span
               >
             </Link>
             {/* <!-- Desktop Menu Hidden below md screens --> */}

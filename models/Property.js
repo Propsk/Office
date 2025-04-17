@@ -1,88 +1,92 @@
 import { Schema, model, models } from 'mongoose';
 
-const PropertySchema = new Schema({
+// Allowed workspace categories
+export const WORKSPACE_TYPES = [
+  'Hot Desk',
+  'Dedicated Desk',
+  'Private Office',
+  'Meeting Room',
+  'Whole Office',
+];
+
+const PropertySchema = new Schema(
+  {
+    // ----- Ownership -----
     owner: {
-        type: Schema.Types.ObjectId,
-        ref: 'User',
-        required: true,
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
     },
+
+    // ----- Core details -----
     name: {
-        type: String,
-        required: true,
+      type: String,
+      required: true,
+      trim: true,
     },
     type: {
-        type: String,
-        required: true,
+      type: String,
+      enum: WORKSPACE_TYPES,
+      required: true,
     },
     description: {
-        type: String,
+      type: String,
+      trim: true,
     },
+
+    // ----- Location -----
     location: {
-        street: {
-            type: String
-        },
-        city: {
-            type: String
-        },
-        state: {
-            type: String
-        },
-        zipcode: {
-            type: String
-        }    
+      street: String,
+      city: { type: String, required: true },
+      state: String,
+      zipcode: String,
     },
-    beds: {
-        type: Number,
-        required: true,
+
+    // ----- Capacity & size -----
+    desk_capacity: {
+      type: Number,
+      required: true,
+      min: 0,
     },
-    baths: {
-        type: Number,
-        required: true,
+    rooms: {
+      type: Number,
+      required: true,
+      min: 0,
     },
     square_feet: {
-        type: Number,
-        required: true,
+      type: Number,
+      required: true,
+      min: 0,
     },
-    amenities: [
-        {
-            type: String
-        }
-    ],
-    rates: {
-        nightly: {
-            type: Number
-        },
-        weekly: {
-            type: Number
-        },
-        monthly: {
-            type: Number
-        }
-    },
-    seller_info: {
-        name: {
-            type: String
-        },
-        email: {
-            type: String
-        },
-        phone: {
-            type: String
-        }
-    },
-    images: [
-        {
-            type: String
-        }
-    ],
-    is_featured: {
-        type: Boolean,
-        default: false
-    }
 
-}, {
-    timestamps: true
-});
+    // ----- Amenities -----
+    amenities: [String],
+
+    // ----- Rates -----
+    rates: {
+      daily: { type: Number, min: 0 },
+      weekly: { type: Number, min: 0 },
+      monthly: { type: Number, min: 0 },
+    },
+
+    // ----- Contact -----
+    contact: {
+      name: String,
+      email: String,
+      phone: String,
+    },
+
+    // ----- Media -----
+    images: [String],
+
+    // ----- Flags -----
+    is_featured: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  { timestamps: true },
+);
 
 const Property = models.Property || model('Property', PropertySchema);
 

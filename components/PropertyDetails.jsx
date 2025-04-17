@@ -34,7 +34,7 @@ const PropertyDetails = ({ property }) => {
           <div className="flex items-center justify-center mb-4 border-b border-gray-200 md:border-b-0 pb-4 md:pb-0">
             <div className="text-gray-500 mr-2 font-bold">Daily</div>
             <div className="text-xl font-bold text-blue-500">
-              {property.rates.daily ? (
+              {property.rates?.daily ? (
                 `£${property.rates.daily.toLocaleString()}`
               ) : (
                 <FaTimes className="text-red-700" />
@@ -44,7 +44,7 @@ const PropertyDetails = ({ property }) => {
           <div className="flex items-center justify-center mb-4 border-b border-gray-200 md:border-b-0 pb-4 md:pb-0">
             <div className="text-gray-500 mr-2 font-bold">Weekly</div>
             <div className="text-xl font-bold text-blue-500">
-              {property.rates.weekly ? (
+              {property.rates?.weekly ? (
                 `£${property.rates.weekly.toLocaleString()}`
               ) : (
                 <FaTimes className="text-red-700" />
@@ -54,7 +54,7 @@ const PropertyDetails = ({ property }) => {
           <div className="flex items-center justify-center mb-4 pb-4 md:pb-0">
             <div className="text-gray-500 mr-2 font-bold">Monthly</div>
             <div className="text-xl font-bold text-blue-500">
-              {property.rates.monthly ? (
+              {property.rates?.monthly ? (
                 `£${property.rates.monthly.toLocaleString()}`
               ) : (
                 <FaTimes className="text-red-700" />
@@ -68,10 +68,10 @@ const PropertyDetails = ({ property }) => {
         <h3 className="text-lg font-bold mb-6">Workspace Details</h3>
         <div className="flex justify-center gap-4 text-blue-500 mb-4 text-xl space-x-9">
           <p>
-            <FaChair className="inline-block mr-2" /> {property.beds} <span className="hidden sm:inline">Desks</span>
+            <FaChair className="inline-block mr-2" /> {property.desk_capacity} <span className="hidden sm:inline">Desks</span>
           </p>
           <p>
-            <FaDoorOpen className="inline-block mr-2" /> {property.baths} <span className="hidden sm:inline">Rooms</span>
+            <FaDoorOpen className="inline-block mr-2" /> {property.rooms} <span className="hidden sm:inline">Rooms</span>
           </p>
           <p>
             <FaRulerCombined className="inline-block mr-2" />
@@ -101,4 +101,3 @@ const PropertyDetails = ({ property }) => {
 };
 
 export default PropertyDetails;
-

@@ -5,7 +5,6 @@ import {
   FaChair,
   FaDoorOpen,
   FaRulerCombined,
-  FaMoneyBill,
   FaMapMarker,
   FaWifi,
   FaPrint,
@@ -44,8 +43,8 @@ const PropertyCard = ({ property }) => {
         </h3>
 
         <div className="flex justify-center gap-4 text-gray-600 text-sm mb-3">
-          <p><FaChair className="inline mr-1" /> {property.beds || 0} Desks</p>
-          <p><FaDoorOpen className="inline mr-1" /> {property.baths || 0} Rooms</p>
+          <p><FaChair className="inline mr-1" /> {property.desk_capacity || 0} Desks</p>
+          <p><FaDoorOpen className="inline mr-1" /> {property.rooms || 0} Rooms</p>
           <p><FaRulerCombined className="inline mr-1" /> {property.square_feet || 0} sqft</p>
         </div>
 

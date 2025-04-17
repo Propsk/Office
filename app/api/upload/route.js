@@ -9,10 +9,16 @@ export async function POST(request) {
     return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
   }
 
-  const blob = await put(file.name, file, {
-    access: 'public',
-    token: process.env.BLOB_READ_WRITE_TOKEN, // or TESTBLOB if you kept that name
-  });
+  try {
+    const blob = await put(file.name, file, {
+      access: 'public',
+      token: process.env.BLOB_READ_WRITE_TOKEN, // change if using a different env var
+      addRandomSuffix: true, // prevents name collisions
+    });
 
-  return NextResponse.json({ url: blob.url });
+    return NextResponse.json({ url: blob.url });
+  } catch (error) {
+    console.error('Blob upload failed:', error);
+    return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
+  }
 }

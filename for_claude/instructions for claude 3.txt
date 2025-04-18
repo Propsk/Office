@@ -1,0 +1,57 @@
+1. Fix the Async Function Issue
+In your app/locations/[location]/page.jsx file, you need to make the component async and properly await the params:
+jsx// Change this
+export default function LocationPage({ params }) {
+  const { location } = params;
+  // ...
+}
+
+// To this
+export default async function LocationPage({ params }) {
+  const { location } = params;
+  // ...
+}
+Also update the generateMetadata function:
+jsxexport async function generateMetadata({ params }) {
+  const { location } = params;
+  // ...
+}
+2. Fix the Image File Path Issue
+Your server is looking for .jpg files but your files have different extensions. Let's update the image paths in your components to match the actual file extensions:
+In your LocationLanding.jsx component:
+jsxconst locationData = {
+  'nottingham': {
+    // ...
+    image: '/location-nottingham.jpg', // This is correct - matches actual extension
+  },
+  'derby': {
+    // ...
+    image: '/location-derby.jpeg', // Change to .jpeg
+  },
+  'beeston': {
+    // ...
+    image: '/location-beeston.jpeg', // Change to .jpeg
+  },
+  // Continue for other locations...
+};
+
+// Also update the fallback image
+const data = locationData[location.toLowerCase()] || {
+  // ...
+  image: '/default-office.jpeg', // Change to .jpeg
+};
+Similarly in your app/locations/page.jsx:
+jsxconst locations = [
+  {
+    name: 'Nottingham',
+    // ...
+    image: '/location-nottingham.jpg', 
+  },
+  {
+    name: 'Derby',
+    // ...
+    image: '/location-derby.jpeg', // Change to .jpeg
+  },
+  // ...and so on
+];
+These two changes should fix the issues you're seeing in the logs. The dynamic route parameter errors will be resolved by making the functions async, and the image 404 errors will be fixed by using the correct file extensions in your code.

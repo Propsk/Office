@@ -13,21 +13,21 @@ const LocationLanding = ({ location }) => {
       description: 'Flexible workspace solutions in the heart of Nottingham. Daily, weekly, and monthly rates available.',
       amenities: ['High-speed Wi-Fi', 'Free tea & coffee', 'Meeting rooms', 'Reception services'],
       nearbyPlaces: ['Nottingham Train Station', 'Old Market Square', 'Victoria Centre'],
-      image: '/location-nottingham.jpg', // Add this image to your public folder
+      image: '/location-nottingham.jpg',
     },
     'derby': {
       title: 'Office Space & Coworking in Derby',
       description: 'Modern office spaces and hot desks in Derby city centre. Perfect for freelancers and businesses of all sizes.',
       amenities: ['24/7 access', 'Meeting rooms', 'Kitchen facilities', 'Business address'],
       nearbyPlaces: ['Derby Cathedral', 'Intu Derby', 'Derby Train Station'],
-      image: '/location-derby.jpg', // Add this image to your public folder
+      image: '/location-derby.jpeg',
     },
     'beeston': {
       title: 'Hot Desking & Office Space in Beeston',
       description: 'Contemporary workspace in Beeston with excellent transport links. Daily and monthly rates for professionals and students.',
       amenities: ['High-speed Wi-Fi', 'Kitchen access', 'Meeting rooms', 'Printing facilities'],
       nearbyPlaces: ['University of Nottingham', 'Beeston Train Station', 'Beeston Square'],
-      image: '/location-beeston.jpg', // Add this image to your public folder
+      image: '/location-beeston.jpeg',
     },
     // Add more locations as needed
   };
@@ -37,7 +37,7 @@ const LocationLanding = ({ location }) => {
     description: `Flexible workspace solutions in ${location}. Find your perfect office space, coworking desk, or meeting room.`,
     amenities: ['High-speed Wi-Fi', 'Kitchen facilities', 'Meeting rooms'],
     nearbyPlaces: ['Local amenities', 'Transport links'],
-    image: '/default-office.jpg',
+    image: '/default-office.jpeg',
   };
 
   return (

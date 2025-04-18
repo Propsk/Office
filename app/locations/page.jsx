@@ -13,43 +13,43 @@ const locations = [
   {
     name: 'Derby',
     description: 'Flexible workspace solutions in Derby with great transport links.',
-    image: '/location-derby.jpg',
+    image: '/location-derby.jpeg',
     slug: 'derby'
   },
   {
     name: 'Beeston',
     description: 'Modern coworking space near the University of Nottingham.',
-    image: '/location-beeston.jpg',
+    image: '/location-beeston.jpeg',
     slug: 'beeston'
   },
   {
     name: 'West Bridgford',
     description: 'Premium office space in the popular West Bridgford area.',
-    image: '/default-office.jpg',
+    image: '/location-west-bridgford.jpeg',
     slug: 'west-bridgford'
   },
   {
     name: 'Stapleford',
     description: 'Convenient workspace options in Stapleford.',
-    image: '/default-office.jpg',
+    image: '/location-stapleford.jpeg',
     slug: 'stapleford'
   },
   {
     name: 'Wilford',
     description: 'Quiet and productive office space in Wilford.',
-    image: '/default-office.jpg',
+    image: '/location-wilford.jpg',
     slug: 'wilford'
   },
   {
     name: 'Clifton',
     description: 'Affordable hot desking and private offices in Clifton.',
-    image: '/default-office.jpg',
+    image: '/location-clifton.jpg',
     slug: 'clifton'
   },
   {
     name: 'Ruddington',
     description: 'Professional workspace in the village of Ruddington.',
-    image: '/default-office.jpg',
+    image: '/location-ruddington.jpg',
     slug: 'ruddington'
   }
 ];
@@ -80,9 +80,10 @@ export default function LocationsPage() {
             >
               <div className="relative h-48 w-full">
                 <Image
-                  src={location.image || '/default-office.jpg'}
+                  src={location.image || '/default-office.jpeg'}
                   alt={`Office space in ${location.name}`}
                   fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   className="object-cover"
                 />
               </div>

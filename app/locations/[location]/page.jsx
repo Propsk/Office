@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import LocationLanding from '@/components/LocationLanding';
-import { generateMetadata } from '@/components/SEOConfig';
+import { generateMetadata as createMetadata } from '@/components/SEOconfig';
 
 // Valid locations list
 const validLocations = [
@@ -32,7 +32,7 @@ export async function generateMetadata({ params }) {
   
   const locationName = formatLocationName(location);
   
-  return generateMetadata({
+  return createMetadata({
     title: `Office Space & Coworking in ${locationName}`,
     description: `Find affordable hot desks, private offices and coworking space in ${locationName}. Daily, weekly and monthly rates available.`,
     location: locationName,
@@ -46,7 +46,7 @@ export async function generateStaticParams() {
   }));
 }
 
-export default function LocationPage({ params }) {
+export default async function LocationPage({ params }) {
   const { location } = params;
   
   // Check if location is valid

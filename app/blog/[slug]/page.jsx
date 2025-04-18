@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { generateMetadata } from '@/components/SEOconfig';
+import { generateMetadata as createMetadata } from '@/components/SEOconfig';
 import { FaCalendar, FaUser, FaTags } from 'react-icons/fa';
 
 // This would come from your CMS or content files in production
@@ -144,10 +144,7 @@ export async function generateMetadata({ params }) {
     return {};
   }
   
-  // Import directly at runtime to avoid build-time issues
-  const { generateMetadata: genMeta } = await import('@/components/SEOconfig');
-  
-  return genMeta({
+  return createMetadata({
     title: post.title,
     description: post.description,
     keywords: post.tags.join(', '),
@@ -177,6 +174,7 @@ export default function BlogPost({ params }) {
             src={post.image || '/blog/default.jpg'}
             alt={post.title}
             fill
+            sizes="100vw"
             className="object-cover"
             priority
           />

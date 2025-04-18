@@ -1,0 +1,99 @@
+OK quick question. On my search bar it has a drop down already. Also I believe there a dropdown on my add properties page. I'd quite like them to be consistent.
+
+Edit
+I understand you'd like to maintain consistency with the dropdown styles. Let's examine your existing dropdown styles from the current implementation of your search bar and add properties page, and then apply the same styling to your new Locations dropdown.
+
+Let's look at two components in your code that already have dropdown functionality:
+
+PropertySearchForm.jsx - This contains your search bar dropdown
+app/properties/add/form.jsx - This contains dropdowns in your add properties form
+Based on these existing components, we can create a consistent dropdown style for your Locations menu. Here's how to modify your Locations dropdown to match the existing style:
+
+jsx
+<div className="relative group">
+  <Link 
+    href="/locations" 
+    className="text-white hover:bg-gray-900 hover:text-white rounded-md px-3 py-2 flex items-center"
+  >
+    Locations <FaChevronDown className="ml-1" />
+  </Link>
+  
+  {/* Dropdown styled to match your existing components */}
+  <div className="absolute z-10 left-0 mt-1 w-56 bg-white border border-gray-300 rounded-md shadow-lg hidden group-hover:block">
+    <div className="py-1">
+      <Link 
+        href="/locations/nottingham" 
+        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+      >
+        Nottingham
+      </Link>
+      <Link 
+        href="/locations/derby" 
+        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+      >
+        Derby
+      </Link>
+      <Link 
+        href="/locations/beeston" 
+        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+      >
+        Beeston
+      </Link>
+      {/* More locations... */}
+    </div>
+  </div>
+</div>
+For the dropdown visibility issue, you may want to consider using a state-based dropdown rather than a CSS hover-based one, especially if that's how your other dropdowns work. Here's how to implement a click-based dropdown:
+
+jsx
+'use client';
+import { useState } from 'react';
+import Link from 'next/link';
+import { FaChevronDown } from 'react-icons/fa';
+
+const LocationsDropdown = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="text-white hover:bg-gray-900 hover:text-white rounded-md px-3 py-2 flex items-center"
+      >
+        Locations <FaChevronDown className="ml-1" />
+      </button>
+      
+      {isOpen && (
+        <div className="absolute z-10 left-0 mt-1 w-56 bg-white border border-gray-300 rounded-md shadow-lg">
+          <div className="py-1">
+            <Link 
+              href="/locations/nottingham" 
+              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              onClick={() => setIsOpen(false)}
+            >
+              Nottingham
+            </Link>
+            {/* Other locations... */}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default LocationsDropdown;
+Then you can import and use this component in your Navbar:
+
+jsx
+import LocationsDropdown from './LocationsDropdown';
+
+// In your Navbar component
+<div className="hidden md:ml-6 md:block">
+  <div className="flex space-x-2">
+    <Link href="/" className={...}>Home</Link>
+    <Link href="/properties" className={...}>Properties</Link>
+    <LocationsDropdown />
+    <Link href="/blog" className={...}>Blog</Link>
+    {/* Other links... */}
+  </div>
+</div>

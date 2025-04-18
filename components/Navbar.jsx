@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { signIn, signOut, useSession } from 'next-auth/react';
 import UnreadMessageCount from './UnreadMessageCount';
+import LocationsDropdown from './LocationsDropdown';
 
 // rest of the component remains the same
 
@@ -87,16 +88,8 @@ const Navbar = () => {
                     pathname === '/properties' ? 'bg-black' : ''} text-white hover:bg-gray-900 hover:text-white rounded-md px-3 py-2`}
                   >Properties</Link
                 >
-                <div className="relative group">
-                  <button className="text-white hover:bg-gray-900 hover:text-white rounded-md px-3 py-2 flex items-center">
-                    Locations <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                  </button>
-                  <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg hidden group-hover:block z-10">
-                    <Link href="/locations/nottingham" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Nottingham</Link>
-                    <Link href="/locations/derby" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Derby</Link>
-                    <Link href="/locations/beeston" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Beeston</Link>
-                  </div>
-                </div>
+                
+                <LocationsDropdown />
                 
                 <Link
                   href="/blog"
@@ -266,8 +259,16 @@ const Navbar = () => {
           >
           
           {/* Mobile Locations Menu */}
-          <div className="text-white px-3 py-2 text-base font-medium">Locations</div>
-          <div className="pl-4">
+          <div 
+            className="text-white block rounded-md px-3 py-2 text-base font-medium"
+            onClick={() => {
+              const subMenu = document.getElementById('mobile-locations-submenu');
+              if (subMenu) subMenu.classList.toggle('hidden');
+            }}
+          >
+            Locations <span className="ml-1">▼</span>
+          </div>
+          <div id="mobile-locations-submenu" className="pl-4 hidden">
             <Link
               href="/locations/nottingham"
               className="text-gray-300 block rounded-md px-3 py-2 text-sm font-medium"

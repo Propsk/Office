@@ -27,7 +27,8 @@
       {
         "name": "next"
       }
-    ]
+    ],
+    "jsxImportSource": "react"  // Add this line
   },
   "include": [
     "**/*.js",

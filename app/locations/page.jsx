@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { generateMetadata } from '@/components/SEOConfig';
+import { generateMetadata } from '@/components/SEOconfig';
 
 // Locations data
 const locations = [

@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import LocationLanding from '@/components/LocationLanding';
-import { generateMetadata as generateSEOMetadata } from '@/components/SEOConfig';
+import { generateMetadata as generateSEOMetadata } from '@/components/SEOconfig';
 
 // Valid locations list
 const validLocations = [

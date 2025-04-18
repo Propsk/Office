@@ -32,6 +32,36 @@ const LocationsDropdown = () => {
           >
             Beeston
           </Link>
+          <Link 
+            href="/locations/stapleford" 
+            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+          >
+            Stapleford
+          </Link>
+          <Link 
+            href="/locations/west-bridgford" 
+            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+          >
+            West Bridgford
+          </Link>
+          <Link 
+            href="/locations/wilford" 
+            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+          >
+            Wilford
+          </Link>
+          <Link 
+            href="/locations/clifton" 
+            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+          >
+            Clifton
+          </Link>
+          <Link 
+            href="/locations/ruddington" 
+            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+          >
+            Ruddington
+          </Link>
         </div>
       </div>
     </div>

@@ -4,8 +4,39 @@ import Link from 'next/link';
 import Image from 'next/image';
 import PropertySearchForm from '@/components/PropertySearchForm';
 import { FaMapMarkerAlt, FaWifi, FaMugHot, FaUsers } from 'react-icons/fa';
+import { useEffect, useState } from 'react';
 
 const LocationLanding = ({ location }) => {
+  const [imagePaths, setImagePaths] = useState({});
+  
+  // Function to check if an image exists
+  const checkImageExists = async (path) => {
+    try {
+      const res = await fetch(path, { method: 'HEAD' });
+      return res.ok;
+    } catch (error) {
+      return false;
+    }
+  };
+  
+  // Using .jpg consistently for all images
+  useEffect(() => {
+    const locations = ['nottingham', 'derby', 'beeston', 'stapleford', 'west-bridgford', 'wilford', 'clifton', 'ruddington'];
+    
+    // Create a map of location to image path
+    const paths = {};
+    
+    // Set all images to use .jpg extension
+    for (const loc of locations) {
+      paths[loc.toLowerCase()] = `/location-${loc.toLowerCase()}.jpg`;
+    }
+    
+    // Set default image path
+    paths['default'] = '/default-office.jpg';
+    
+    setImagePaths(paths);
+  }, []);
+  
   // Location data mapping
   const locationData = {
     'nottingham': {
@@ -13,23 +44,49 @@ const LocationLanding = ({ location }) => {
       description: 'Flexible workspace solutions in the heart of Nottingham. Daily, weekly, and monthly rates available.',
       amenities: ['High-speed Wi-Fi', 'Free tea & coffee', 'Meeting rooms', 'Reception services'],
       nearbyPlaces: ['Nottingham Train Station', 'Old Market Square', 'Victoria Centre'],
-      image: '/location-nottingham.jpg',
     },
     'derby': {
       title: 'Office Space & Coworking in Derby',
       description: 'Modern office spaces and hot desks in Derby city centre. Perfect for freelancers and businesses of all sizes.',
       amenities: ['24/7 access', 'Meeting rooms', 'Kitchen facilities', 'Business address'],
       nearbyPlaces: ['Derby Cathedral', 'Intu Derby', 'Derby Train Station'],
-      image: '/location-derby.jpeg',
     },
     'beeston': {
       title: 'Hot Desking & Office Space in Beeston',
       description: 'Contemporary workspace in Beeston with excellent transport links. Daily and monthly rates for professionals and students.',
       amenities: ['High-speed Wi-Fi', 'Kitchen access', 'Meeting rooms', 'Printing facilities'],
       nearbyPlaces: ['University of Nottingham', 'Beeston Train Station', 'Beeston Square'],
-      image: '/location-beeston.jpeg',
     },
-    // Add more locations as needed
+    'stapleford': {
+      title: 'Affordable Office Space in Stapleford',
+      description: 'Budget-friendly workspace solutions in Stapleford. Perfect for startups and small businesses looking for value.',
+      amenities: ['High-speed internet', 'Meeting pods', 'Kitchen facilities', 'Secure 24/7 access'],
+      nearbyPlaces: ['Stapleford Library', 'Walter Parker VC Square', 'Local shopping district'],
+    },
+    'west-bridgford': {
+      title: 'Premium Coworking Space in West Bridgford',
+      description: 'Upscale office and coworking facilities in the prime location of West Bridgford. Professional environment for growing businesses.',
+      amenities: ['Premium furniture', 'Conference rooms', 'Barista-quality coffee', 'Networking events'],
+      nearbyPlaces: ['Trent Bridge Cricket Ground', 'Bridgford Park', 'Central Avenue shops'],
+    },
+    'wilford': {
+      title: 'Quiet Office Space in Wilford',
+      description: 'Peaceful and productive workspace away from city noise. Ideal for focused work and creative thinking.',
+      amenities: ['Quiet zones', 'Garden area', 'Free parking', 'High-speed broadband'],
+      nearbyPlaces: ['Wilford Village', 'Victoria Embankment', 'Gresham Sports Park'],
+    },
+    'clifton': {
+      title: 'Convenient Workspace in Clifton',
+      description: 'Well-connected office and hot desk facilities in Clifton. Affordable options with flexible rental terms.',
+      amenities: ['Transport links', 'Breakout spaces', 'Printing services', 'Meeting facilities'],
+      nearbyPlaces: ['Clifton Campus', 'Clifton Centre', 'Clifton Playing Fields'],
+    },
+    'ruddington': {
+      title: 'Charming Office Space in Ruddington Village',
+      description: 'Character workspaces in the picturesque village of Ruddington. Beautiful surroundings with all modern amenities.',
+      amenities: ['Rural setting', 'High-speed connectivity', 'Local cafes nearby', 'Free parking'],
+      nearbyPlaces: ['Ruddington Village Centre', 'Ruddington Country Park', 'The Framework Knitters Museum'],
+    }
   };
 
   const data = locationData[location.toLowerCase()] || {
@@ -37,8 +94,9 @@ const LocationLanding = ({ location }) => {
     description: `Flexible workspace solutions in ${location}. Find your perfect office space, coworking desk, or meeting room.`,
     amenities: ['High-speed Wi-Fi', 'Kitchen facilities', 'Meeting rooms'],
     nearbyPlaces: ['Local amenities', 'Transport links'],
-    image: '/default-office.jpeg',
   };
+  
+  const imagePath = imagePaths[location.toLowerCase()] || imagePaths['default'] || 'https://placehold.co/600x400?text=Office+Space';
 
   return (
     <>
@@ -101,14 +159,16 @@ const LocationLanding = ({ location }) => {
             </div>
             
             <div className="relative h-[400px] rounded-lg overflow-hidden shadow-xl">
-              <Image
-                src={data.image}
-                alt={`Office space in ${location}`}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 50vw"
-                priority
-              />
+              {Object.keys(imagePaths).length > 0 && (
+                <Image
+                  src={imagePath}
+                  alt={`Office space in ${location}`}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  priority
+                />
+              )}
             </div>
           </div>
         </div>

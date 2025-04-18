@@ -13,25 +13,25 @@ const locations = [
   {
     name: 'Derby',
     description: 'Flexible workspace solutions in Derby with great transport links.',
-    image: '/location-derby.jpeg',
+    image: '/location-derby.jpg',
     slug: 'derby'
   },
   {
     name: 'Beeston',
     description: 'Modern coworking space near the University of Nottingham.',
-    image: '/location-beeston.jpeg',
+    image: '/location-beeston.jpg',
     slug: 'beeston'
   },
   {
     name: 'West Bridgford',
     description: 'Premium office space in the popular West Bridgford area.',
-    image: '/location-west-bridgford.jpeg',
+    image: '/location-west-bridgford.jpg',
     slug: 'west-bridgford'
   },
   {
     name: 'Stapleford',
     description: 'Convenient workspace options in Stapleford.',
-    image: '/location-stapleford.jpeg',
+    image: '/location-stapleford.jpg',
     slug: 'stapleford'
   },
   {
@@ -80,7 +80,7 @@ export default function LocationsPage() {
             >
               <div className="relative h-48 w-full">
                 <Image
-                  src={location.image || '/default-office.jpeg'}
+                  src={location.image || '/default-office.jpg'}
                   alt={`Office space in ${location.name}`}
                   fill
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"

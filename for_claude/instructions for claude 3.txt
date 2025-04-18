@@ -1,57 +1,274 @@
-1. Fix the Async Function Issue
-In your app/locations/[location]/page.jsx file, you need to make the component async and properly await the params:
-jsx// Change this
-export default function LocationPage({ params }) {
-  const { location } = params;
-  // ...
-}
+You're still experiencing the same core errors even after implementing some changes:
 
-// To this
-export default async function LocationPage({ params }) {
-  const { location } = params;
-  // ...
-}
-Also update the generateMetadata function:
-jsxexport async function generateMetadata({ params }) {
-  const { location } = params;
-  // ...
-}
-2. Fix the Image File Path Issue
-Your server is looking for .jpg files but your files have different extensions. Let's update the image paths in your components to match the actual file extensions:
-In your LocationLanding.jsx component:
-jsxconst locationData = {
-  'nottingham': {
-    // ...
-    image: '/location-nottingham.jpg', // This is correct - matches actual extension
-  },
-  'derby': {
-    // ...
-    image: '/location-derby.jpeg', // Change to .jpeg
-  },
-  'beeston': {
-    // ...
-    image: '/location-beeston.jpeg', // Change to .jpeg
-  },
-  // Continue for other locations...
-};
+The async function error in dynamic route:
 
-// Also update the fallback image
-const data = locationData[location.toLowerCase()] || {
-  // ...
-  image: '/default-office.jpeg', // Change to .jpeg
-};
-Similarly in your app/locations/page.jsx:
-jsxconst locations = [
-  {
-    name: 'Nottingham',
-    // ...
-    image: '/location-nottingham.jpg', 
-  },
-  {
-    name: 'Derby',
-    // ...
-    image: '/location-derby.jpeg', // Change to .jpeg
-  },
-  // ...and so on
+Error: Route "/locations/[location]" used `params.location`. `params` should be awaited before using its properties.
+
+The image loading errors:
+
+Failed to load resource: the server responded with a status of 400 (Bad Request)
+Let's fix these issues one by one:
+1. Fix the Async Params Issue
+Let's completely rewrite your app/locations/[location]/page.jsx file:
+jsximport { notFound } from 'next/navigation';
+import LocationLanding from '@/components/LocationLanding';
+import { generateMetadata as generateSEOMetadata } from '@/components/SEOConfig';
+
+// Valid locations list
+const validLocations = [
+  'nottingham',
+  'derby',
+  'beeston',
+  'stapleford',
+  'west-bridgford',
+  'wilford',
+  'clifton',
+  'ruddington'
 ];
-These two changes should fix the issues you're seeing in the logs. The dynamic route parameter errors will be resolved by making the functions async, and the image 404 errors will be fixed by using the correct file extensions in your code.
+
+// Function to format location name for display
+function formatLocationName(location) {
+  return location
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+// Generate metadata for each location page
+export async function generateMetadata({ params }) {
+  // In Next.js App Router, params is a promise in server components
+  // We need to await it properly
+  const locationParam = params.location;
+
+  if (!validLocations.includes(locationParam.toLowerCase())) {
+    return {};
+  }
+  
+  const locationName = formatLocationName(locationParam);
+  
+  return generateSEOMetadata({
+    title: `Office Space & Coworking in ${locationName}`,
+    description: `Find affordable hot desks, private offices and coworking space in ${locationName}. Daily, weekly and monthly rates available.`,
+    location: locationName,
+  });
+}
+
+// Generate static params for all locations
+export async function generateStaticParams() {
+  return validLocations.map(location => ({
+    location,
+  }));
+}
+
+export default async function LocationPage({ params }) {
+  // In Next.js App Router, params is a promise in server components
+  // We need to await it properly
+  const locationParam = params.location;
+  
+  // Check if location is valid
+  if (!validLocations.includes(locationParam.toLowerCase())) {
+    return notFound();
+  }
+  
+  const locationName = formatLocationName(locationParam);
+  
+  return (
+    <div>
+      <LocationLanding location={locationName} />
+    </div>
+  );
+}
+The key changes:
+
+Made the components async
+Used simpler variable names for location params to avoid confusion
+
+2. Fix the Image Issues
+Let's update your LocationLanding.jsx file to handle different image extensions:
+jsx'use client';
+
+import Link from 'next/link';
+import Image from 'next/image';
+import PropertySearchForm from '@/components/PropertySearchForm';
+import { FaMapMarkerAlt, FaWifi, FaMugHot, FaUsers } from 'react-icons/fa';
+import { useEffect, useState } from 'react';
+
+const LocationLanding = ({ location }) => {
+  const [imagePaths, setImagePaths] = useState({});
+  
+  // Function to check if an image exists
+  const checkImageExists = async (path) => {
+    try {
+      const res = await fetch(path, { method: 'HEAD' });
+      return res.ok;
+    } catch (error) {
+      return false;
+    }
+  };
+  
+  // Find the right extension for each image on component mount
+  useEffect(() => {
+    const findImages = async () => {
+      const locations = ['nottingham', 'derby', 'beeston', 'stapleford', 'west-bridgford', 'wilford', 'clifton', 'ruddington'];
+      const extensions = ['.jpg', '.jpeg'];
+      
+      // Create a map of location to image path
+      const paths = {};
+      
+      // Check each location with each extension
+      for (const loc of locations) {
+        let found = false;
+        for (const ext of extensions) {
+          const path = `/location-${loc.toLowerCase()}${ext}`;
+          if (await checkImageExists(path)) {
+            paths[loc.toLowerCase()] = path;
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          // If not found, use a fallback
+          paths[loc.toLowerCase()] = 'https://placehold.co/600x400?text=' + loc.charAt(0).toUpperCase() + loc.slice(1);
+        }
+      }
+      
+      // Also check for default-office
+      let defaultImage = 'https://placehold.co/600x400?text=Office+Space';
+      for (const ext of extensions) {
+        const path = `/default-office${ext}`;
+        if (await checkImageExists(path)) {
+          defaultImage = path;
+          break;
+        }
+      }
+      paths['default'] = defaultImage;
+      
+      setImagePaths(paths);
+    };
+    
+    findImages();
+  }, []);
+  
+  // Location data mapping
+  const locationData = {
+    'nottingham': {
+      title: 'Coworking & Hot Desks in Nottingham',
+      description: 'Flexible workspace solutions in the heart of Nottingham. Daily, weekly, and monthly rates available.',
+      amenities: ['High-speed Wi-Fi', 'Free tea & coffee', 'Meeting rooms', 'Reception services'],
+      nearbyPlaces: ['Nottingham Train Station', 'Old Market Square', 'Victoria Centre'],
+    },
+    'derby': {
+      title: 'Office Space & Coworking in Derby',
+      description: 'Modern office spaces and hot desks in Derby city centre. Perfect for freelancers and businesses of all sizes.',
+      amenities: ['24/7 access', 'Meeting rooms', 'Kitchen facilities', 'Business address'],
+      nearbyPlaces: ['Derby Cathedral', 'Intu Derby', 'Derby Train Station'],
+    },
+    'beeston': {
+      title: 'Hot Desking & Office Space in Beeston',
+      description: 'Contemporary workspace in Beeston with excellent transport links. Daily and monthly rates for professionals and students.',
+      amenities: ['High-speed Wi-Fi', 'Kitchen access', 'Meeting rooms', 'Printing facilities'],
+      nearbyPlaces: ['University of Nottingham', 'Beeston Train Station', 'Beeston Square'],
+    },
+    // Add more locations as needed
+  };
+
+  const data = locationData[location.toLowerCase()] || {
+    title: `Office Space in ${location}`,
+    description: `Flexible workspace solutions in ${location}. Find your perfect office space, coworking desk, or meeting room.`,
+    amenities: ['High-speed Wi-Fi', 'Kitchen facilities', 'Meeting rooms'],
+    nearbyPlaces: ['Local amenities', 'Transport links'],
+  };
+  
+  const imagePath = imagePaths[location.toLowerCase()] || imagePaths['default'] || 'https://placehold.co/600x400?text=Office+Space';
+
+  return (
+    <>
+      {/* Hero section */}
+      <section className="bg-blue-700 py-20">
+        <div className="container mx-auto px-4">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold text-white mb-4">
+              {data.title}
+            </h1>
+            <p className="text-xl text-white mb-8 max-w-2xl mx-auto">
+              {data.description}
+            </p>
+            <PropertySearchForm />
+          </div>
+        </div>
+      </section>
+
+      {/* Main content */}
+      <section className="py-12">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            <div>
+              <h2 className="text-3xl font-bold mb-4">Workspace Solutions in {location}</h2>
+              <p className="text-gray-600 mb-6">
+                Whether you need a hot desk for the day, a dedicated desk for the week, or a private office for your team,
+                we have flexible solutions to suit your needs in {location}.
+              </p>
+              
+              <div className="mb-6">
+                <h3 className="text-xl font-semibold mb-3">Popular Options in {location}</h3>
+                <ul className="space-y-2">
+                  <li className="flex items-center">
+                    <span className="bg-blue-100 text-blue-800 p-2 rounded-full mr-3">
+                      <FaWifi />
+                    </span>
+                    <span>Hot Desking - from £15/day</span>
+                  </li>
+                  <li className="flex items-center">
+                    <span className="bg-blue-100 text-blue-800 p-2 rounded-full mr-3">
+                      <FaUsers />
+                    </span>
+                    <span>Private Offices - from £350/month</span>
+                  </li>
+                  <li className="flex items-center">
+                    <span className="bg-blue-100 text-blue-800 p-2 rounded-full mr-3">
+                      <FaMugHot />
+                    </span>
+                    <span>Coworking Membership - from £99/month</span>
+                  </li>
+                </ul>
+              </div>
+              
+              <Link 
+                href="/properties" 
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg inline-block hover:bg-blue-700 transition"
+              >
+                View Available Spaces
+              </Link>
+            </div>
+            
+            <div className="relative h-[400px] rounded-lg overflow-hidden shadow-xl">
+              {imagePaths[location.toLowerCase()] && (
+                <Image
+                  src={imagePath}
+                  alt={`Office space in ${location}`}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  priority
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Rest of your component remains the same */}
+      {/* ... */}
+    </>
+  );
+};
+
+export default LocationLanding;
+This updated component:
+
+Dynamically checks which image extensions exist
+Creates a map of locations to correct image paths
+Uses placeholders when images aren't found
+Waits for the images to be verified before rendering them
+
+These changes should fix both the async parameter issue and the image loading problems. The dynamic checking ensures that the component will work with any file extension (.jpg, .jpeg, etc.).

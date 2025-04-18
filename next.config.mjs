@@ -13,7 +13,13 @@ const nextConfig = {
     esmExternals: true,
   },
   images: {
-    domains: ['res.cloudinary.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
+      },
+    ],
   },
   webpack: (config, { isServer }) => {
     config.resolve.alias['@'] = path.resolve(__dirname);

@@ -12,16 +12,39 @@ export const POST = async (request) => {
 
     const sessionUser = await getSessionUser();
     if (!sessionUser?.user?.id) {
-      return new Response('User ID is required', { status: 401 });
+      return new Response(JSON.stringify({ isBookmarked: false, message: 'Not authenticated' }), { 
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
     const userId = sessionUser.user.id;
 
     const user = await User.findOne({ _id: userId });
+    
+    if (!user) {
+      return new Response(JSON.stringify({ isBookmarked: false, message: 'User not found' }), { 
+        status: 404,
+        headers: { 'Content-Type': 'application/json' } 
+      });
+    }
+    
+    // Ensure bookmarks array exists
+    if (!user.bookmarks) {
+      user.bookmarks = [];
+      await user.save();
+    }
+    
     const isBookmarked = user.bookmarks.includes(propertyId);
 
-    return new Response(JSON.stringify({ isBookmarked }), { status: 200 });
+    return new Response(JSON.stringify({ isBookmarked }), { 
+      status: 200,
+      headers: { 'Content-Type': 'application/json' } 
+    });
   } catch (error) {
     console.log(error);
-    return new Response('Something went wrong', { status: 500 });
+    return new Response(JSON.stringify({ error: 'Something went wrong' }), { 
+      status: 500,
+      headers: { 'Content-Type': 'application/json' } 
+    });
   }
 };

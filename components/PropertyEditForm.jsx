@@ -1,9 +1,12 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { fetchProperty } from '@/utils/requests';
-import { WORKSPACE_TYPES } from '@/models/Property';
+import { toast } from 'react-toastify';
+import { WORKSPACE_TYPES } from '@/constants/workspaceTypes';   // <-- changed
+
+/* …rest of the file (handlers, JSX) unchanged… */
+
 
 const AMENITIES = ['Wi-Fi', 'Kitchen', 'Meeting Room', 'Parking', 'Air Conditioning', 'Printing'];
 const num = (v) => (v === '' ? 0 : Number(v));

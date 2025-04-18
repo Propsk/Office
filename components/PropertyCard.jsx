@@ -26,9 +26,10 @@ const PropertyCard = ({ property }) => {
       <Image
         src={property.images?.[0] || '/default-office.jpg'}
         alt={property.name || 'Workspace Image'}
-        height={0}
-        width={0}
-        sizes="100vw"
+        width={500}
+        height={350}
+        priority={true}
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         className="w-full h-48 object-cover rounded-t-xl"
       />
 

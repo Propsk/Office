@@ -2,11 +2,10 @@ import { Schema, model, models } from 'mongoose';
 
 // Allowed workspace categories
 export const WORKSPACE_TYPES = [
-  'Hot Desk',
-  'Dedicated Desk',
   'Private Office',
+  'Coworking Desk',
   'Meeting Room',
-  'Whole Office',
+  'Event Space',
 ];
 
 const PropertySchema = new Schema(
@@ -44,10 +43,12 @@ const PropertySchema = new Schema(
       type: Number,
       min: 0,
     },
+
     rooms: {
       type: Number,
       min: 0,
     },
+
     square_feet: {
       type: Number,
       min: 0,
@@ -72,6 +73,19 @@ const PropertySchema = new Schema(
 
     // ----- Media -----
     images: [String],
+
+    // Add approval status
+    status: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending'
+    },
+    
+    // Add approval notes
+    approvalNotes: {
+      type: String,
+      default: ''
+    },
 
     // ----- Flags -----
     is_featured: {

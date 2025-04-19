@@ -6,12 +6,15 @@ import { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import Spinner from '@/components/Spinner';
 import Link from 'next/link';
+import { deleteProperty } from '@/utils/propertyActions';
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
+  // Track which property IDs are currently being processed
+  const [processingIds, setProcessingIds] = useState([]);
 
   useEffect(() => {
     // Check if user is admin
@@ -53,6 +56,9 @@ export default function AdminDashboard() {
 
   const handleApproval = async (id, status, notes = '') => {
     try {
+      // Set loading state for this specific property
+      setProcessingIds(prev => [...prev, id]);
+      
       const res = await fetch(`/api/properties/${id}/approve`, {
         method: 'PUT',
         headers: {
@@ -62,9 +68,21 @@ export default function AdminDashboard() {
       });
 
       if (res.ok) {
-        toast.success(`Property ${status}`);
+        toast.success(`Property ${status === 'approved' ? 'approved' : 'rejected'} successfully`);
+        
         // Remove from list
         setProperties(properties.filter(p => p._id !== id));
+        
+        // Add a secondary message about notifications
+        if (status === 'approved') {
+          setTimeout(() => {
+            toast.info('The property owner has been notified of the approval.');
+          }, 1000);
+        } else if (status === 'rejected') {
+          setTimeout(() => {
+            toast.info('The property owner has been notified of the rejection.');
+          }, 1000);
+        }
       } else {
         const data = await res.json();
         toast.error(data.message || 'Failed to update property');
@@ -72,7 +90,29 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Error approving property:', error);
       toast.error('Something went wrong');
+    } finally {
+      // Remove from processing state regardless of outcome
+      setProcessingIds(prev => prev.filter(itemId => itemId !== id));
     }
+  };
+
+  const handleDeleteProperty = async (id) => {
+    const property = properties.find(p => p._id === id);
+    const propertyName = property ? property.name : 'this property';
+    
+    // Set loading state before deletion
+    setProcessingIds(prev => [...prev, id]);
+    
+    // Use the utility function for deletion
+    const success = await deleteProperty(
+      id, 
+      propertyName,
+      // On success callback - remove property from list
+      () => setProperties(properties.filter(p => p._id !== id))
+    );
+    
+    // Always clean up processing state
+    setProcessingIds(prev => prev.filter(itemId => itemId !== id));
   };
 
   if (status === 'loading' || loading) {
@@ -131,18 +171,24 @@ export default function AdminDashboard() {
                     <td className="border p-3">
                       {new Date(property.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="border p-3 flex space-x-2">
+                    <td className="border p-3 space-x-2">
                       <button 
                         onClick={() => handleApproval(property._id, 'approved')} 
-                        className="bg-green-500 text-white py-1 px-2 rounded hover:bg-green-600"
+                        className={`bg-green-500 text-white py-1 px-2 rounded hover:bg-green-600 ${
+                          processingIds.includes(property._id) ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                        disabled={processingIds.includes(property._id)}
                       >
-                        Approve
+                        {processingIds.includes(property._id) ? 'Processing...' : 'Approve'}
                       </button>
                       <button 
                         onClick={() => handleApproval(property._id, 'rejected')} 
-                        className="bg-red-500 text-white py-1 px-2 rounded hover:bg-red-600"
+                        className={`bg-red-500 text-white py-1 px-2 rounded hover:bg-red-600 ${
+                          processingIds.includes(property._id) ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                        disabled={processingIds.includes(property._id)}
                       >
-                        Reject
+                        {processingIds.includes(property._id) ? 'Processing...' : 'Reject'}
                       </button>
                       <Link
                         href={`/properties/${property._id}`} 
@@ -151,6 +197,15 @@ export default function AdminDashboard() {
                       >
                         View
                       </Link>
+                      <button 
+                        onClick={() => handleDeleteProperty(property._id)} 
+                        className={`bg-gray-800 text-white py-1 px-2 rounded hover:bg-gray-900 ${
+                          processingIds.includes(property._id) ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                        disabled={processingIds.includes(property._id)}
+                      >
+                        {processingIds.includes(property._id) ? 'Processing...' : 'Delete'}
+                      </button>
                     </td>
                   </tr>
                 ))}

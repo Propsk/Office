@@ -1,0 +1,406 @@
+Let's Fix These Issues:
+
+1. Update the Profile Page to Show All Properties for Admins
+
+"use client";
+
+// Modified fetchUserProperties function for profile page
+const fetchUserProperties = async (userId, isAdmin) => {
+  if (!userId) {
+    return [];
+  }
+  
+  try {
+    // If user is admin, fetch all properties instead of just their own
+    const endpoint = isAdmin 
+      ? '/api/properties?all=true' // Need to create this endpoint
+      : `/api/properties/user/${userId}`;
+      
+    const res = await fetch(endpoint);
+
+    if (res.status === 200) {
+      const data = await res.json();
+      // For admin endpoint, we'll get back { properties, total }
+      return isAdmin ? data.properties : data;
+    }
+    return [];
+  } catch (error) {
+    console.log(error);
+    return [];
+  }
+};
+
+// Inside useEffect in profile page
+useEffect(() => {
+  const fetchProperties = async () => {
+    if (session?.user?.id) {
+      setLoading(true);
+      const isAdmin = session.user.isAdmin || false;
+      const props = await fetchUserProperties(session.user.id, isAdmin);
+      setProperties(props);
+      setLoading(false);
+    }
+  };
+
+  fetchProperties();
+}, [session]);
+
+// Update the property list display to show owner information if admin
+// Inside the property mapping section:
+<div className="mt-2">
+  <p className="text-lg font-semibold">{property.name}</p>
+  <p className="text-gray-600">Address: {property.location.street} {property.location.city} {property.location.state}</p>
+  
+  {/* Show owner info if admin */}
+  {session?.user?.isAdmin && property.owner && (
+    <p className="text-sm text-gray-500">
+      Owner: {typeof property.owner === 'object' ? property.owner.username : 'Unknown'} 
+    </p>
+  )}
+</div>
+
+2. Create a New API Endpoint to Fetch All Properties for Admins
+
+// Modified GET handler in app/api/properties/route.js
+export async function GET(request) {
+  await connectDB();
+
+  // Get session user for admin check
+  const sessionUser = await getSessionUser();
+  const isAdmin = sessionUser?.user?.isAdmin || false;
+  
+  // Check if all=true parameter is present (only allowed for admins)
+  const showAll = request.nextUrl.searchParams.get("all") === "true";
+  
+  // Normal pagination logic
+  const page = parseInt(request.nextUrl.searchParams.get("page") || "1", 10);
+  const pageSize = parseInt(request.nextUrl.searchParams.get("pageSize") || "6", 10);
+  const skip = (page - 1) * pageSize;
+
+  // Query conditions
+  let query = {};
+  
+  // Only admin can see all properties - add status filter for non-admins
+  if (!isAdmin || !showAll) {
+    query.status = "approved"; // Regular users only see approved properties
+  }
+  
+  // Get total count and properties
+  const total = await Property.countDocuments(query);
+  
+  // If admin is requesting all properties, include owner info
+  let properties;
+  
+  if (isAdmin && showAll) {
+    properties = await Property.find(query)
+      .populate('owner', 'username email') // Include owner details for admins
+      .skip(skip)
+      .limit(pageSize);
+  } else {
+    properties = await Property.find(query)
+      .skip(skip)
+      .limit(pageSize);
+  }
+
+  return new Response(JSON.stringify({ total, properties }), { status: 200 });
+}
+
+3. Update the Property Detail Page to Show Admin Controls
+
+// Add this inside your PropertyPage component
+// Near where you render the property details
+
+// Add admin controls if user is admin
+const AdminControls = ({ property, session }) => {
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  const handleDelete = async () => {
+    if (!session?.user?.isAdmin) return;
+    
+    const confirmed = window.confirm(`Are you sure you want to delete ${property.name}?`);
+    if (!confirmed) return;
+    
+    try {
+      setIsDeleting(true);
+      const res = await fetch(`/api/properties/${property._id}`, {
+        method: 'DELETE'
+      });
+      
+      if (res.ok) {
+        toast.success('Property deleted successfully');
+        router.push('/properties');
+      } else {
+        toast.error('Failed to delete property');
+      }
+    } catch (error) {
+      console.error('Error deleting property:', error);
+      toast.error('An error occurred while deleting the property');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Return null if not admin
+  if (!session?.user?.isAdmin) return null;
+  
+  return (
+    <div className="bg-red-50 p-4 rounded-lg shadow-md mb-4">
+      <h3 className="text-xl font-bold text-red-700 mb-2">Admin Controls</h3>
+      <div className="flex flex-col space-y-2">
+        <div className="flex justify-between items-center">
+          <span>Property ID: {property._id}</span>
+          <span className="px-2 py-1 rounded bg-blue-100 text-blue-800 text-sm">
+            Status: {property.status || 'approved'}
+          </span>
+        </div>
+        
+        <div className="flex space-x-2 mt-2">
+          <button
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition disabled:opacity-50"
+          >
+            {isDeleting ? 'Deleting...' : 'Delete Property'}
+          </button>
+          
+          <Link
+            href={`/admin`}
+            className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition"
+          >
+            Back to Admin
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Add this component in your sidebar section
+{session?.user?.isAdmin && (
+  <AdminControls property={property} session={session} />
+)}
+
+4. Extract Reusable Delete Property Function
+
+// Add this inside your PropertyPage component
+// Near where you render the property details
+
+// Add admin controls if user is admin
+const AdminControls = ({ property, session }) => {
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  const handleDelete = async () => {
+    if (!session?.user?.isAdmin) return;
+    
+    const confirmed = window.confirm(`Are you sure you want to delete ${property.name}?`);
+    if (!confirmed) return;
+    
+    try {
+      setIsDeleting(true);
+      const res = await fetch(`/api/properties/${property._id}`, {
+        method: 'DELETE'
+      });
+      
+      if (res.ok) {
+        toast.success('Property deleted successfully');
+        router.push('/properties');
+      } else {
+        toast.error('Failed to delete property');
+      }
+    } catch (error) {
+      console.error('Error deleting property:', error);
+      toast.error('An error occurred while deleting the property');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Return null if not admin
+  if (!session?.user?.isAdmin) return null;
+  
+  return (
+    <div className="bg-red-50 p-4 rounded-lg shadow-md mb-4">
+      <h3 className="text-xl font-bold text-red-700 mb-2">Admin Controls</h3>
+      <div className="flex flex-col space-y-2">
+        <div className="flex justify-between items-center">
+          <span>Property ID: {property._id}</span>
+          <span className="px-2 py-1 rounded bg-blue-100 text-blue-800 text-sm">
+            Status: {property.status || 'approved'}
+          </span>
+        </div>
+        
+        <div className="flex space-x-2 mt-2">
+          <button
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition disabled:opacity-50"
+          >
+            {isDeleting ? 'Deleting...' : 'Delete Property'}
+          </button>
+          
+          <Link
+            href={`/admin`}
+            className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition"
+          >
+            Back to Admin
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Add this component in your sidebar section
+{session?.user?.isAdmin && (
+  <AdminControls property={property} session={session} />
+)}// Add this inside your PropertyPage component
+// Near where you render the property details
+
+// Add admin controls if user is admin
+const AdminControls = ({ property, session }) => {
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  const handleDelete = async () => {
+    if (!session?.user?.isAdmin) return;
+    
+    const confirmed = window.confirm(`Are you sure you want to delete ${property.name}?`);
+    if (!confirmed) return;
+    
+    try {
+      setIsDeleting(true);
+      const res = await fetch(`/api/properties/${property._id}`, {
+        method: 'DELETE'
+      });
+      
+      if (res.ok) {
+        toast.success('Property deleted successfully');
+        router.push('/properties');
+      } else {
+        toast.error('Failed to delete property');
+      }
+    } catch (error) {
+      console.error('Error deleting property:', error);
+      toast.error('An error occurred while deleting the property');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Return null if not admin
+  if (!session?.user?.isAdmin) return null;
+  
+  return (
+    <div className="bg-red-50 p-4 rounded-lg shadow-md mb-4">
+      <h3 className="text-xl font-bold text-red-700 mb-2">Admin Controls</h3>
+      <div className="flex flex-col space-y-2">
+        <div className="flex justify-between items-center">
+          <span>Property ID: {property._id}</span>
+          <span className="px-2 py-1 rounded bg-blue-100 text-blue-800 text-sm">
+            Status: {property.status || 'approved'}
+          </span>
+        </div>
+        
+        <div className="flex space-x-2 mt-2">
+          <button
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition disabled:opacity-50"
+          >
+            {isDeleting ? 'Deleting...' : 'Delete Property'}
+          </button>
+          
+          <Link
+            href={`/admin`}
+            className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition"
+          >
+            Back to Admin
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Add this component in your sidebar section
+{session?.user?.isAdmin && (
+  <AdminControls property={property} session={session} />
+)}
+
+// utils/propertyActions.js
+import { toast } from 'react-toastify';
+
+/**
+ * Delete a property with confirmation
+ * @param {string} propertyId - The ID of the property to delete
+ * @param {string} propertyName - The name of the property (for the confirmation message)
+ * @param {function} onSuccess - Callback function to execute after successful deletion
+ * @param {function} setLoading - Function to update loading state
+ * @returns {Promise<boolean>} - Whether the deletion was successful
+ */
+export const deleteProperty = async (
+  propertyId, 
+  propertyName = 'this property', 
+  onSuccess = () => {}, 
+  setLoading = null
+) => {
+  // Request confirmation
+  const confirmed = window.confirm(`Are you sure you want to delete ${propertyName}?`);
+  if (!confirmed) return false;
+  
+  // Set loading state if provided
+  if (setLoading) setLoading(true);
+  
+  try {
+    const res = await fetch(`/api/properties/${propertyId}`, { 
+      method: 'DELETE' 
+    });
+    
+    if (res.ok) {
+      toast.success('Property deleted successfully');
+      onSuccess();
+      return true;
+    } else {
+      const data = await res.json();
+      toast.error(data.message || 'Failed to delete property');
+      return false;
+    }
+  } catch (error) {
+    console.error('Error deleting property:', error);
+    toast.error('Something went wrong');
+    return false;
+  } finally {
+    // Reset loading state if provided
+    if (setLoading) setLoading(false);
+  }
+};
+
+Implementation Instructions
+Here's how to implement these changes to fix the admin access issues:
+1. Create the Utility Function First
+Create a new file called utils/propertyActions.js with the reusable property deletion function I provided. This will give you consistent deletion behavior across all pages.
+2. Update the API Route for Properties
+Modify your app/api/properties/route.js file to include the changes for admin access that I provided. This will allow admins to see all properties, including those that are pending or belong to other users.
+3. Update Your Profile Page
+Modify your app/profile/page.jsx to include the changes for admin viewing. This will allow admins to see all properties in their profile page, not just their own.
+Key changes:
+
+Update the fetchUserProperties function to check if the user is an admin
+If they are an admin, fetch all properties instead of just their own
+Display owner information for admins
+
+4. Update Your Property Detail Page
+Modify your app/properties/[id]/page.jsx to add the admin controls component. This will give admins the ability to delete any property directly from the property detail page.
+Why These Issues Occur
+The problems you're experiencing happen because:
+
+Profile Page Limitation: Your profile page is coded to only fetch and display properties owned by the current user - it doesn't have special admin handling.
+Property Detail Page Permissions: Your property detail page only shows delete controls to the property owner, without a special case for admins.
+API Limitations: Your existing API endpoints don't fully distinguish between regular users and admins for certain operations.
+
+The changes I've provided add admin-specific logic to these components, giving admins the ability to:
+
+See all properties in their profile page
+Delete any property from both the profile page and property detail page
+Access additional property information that regular users cannot see
+
+After implementing these changes, your admins should have the full property management capabilities they need throughout the site.

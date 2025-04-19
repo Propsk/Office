@@ -1,0 +1,230 @@
+1. Update your PropertyAddForm component
+For both versions of your property add form components (app/properties/add/form.jsx and components/PropertyAddForm.jsx), replace the handleSubmit function with the updated version I provided. This will give better feedback when a property is submitted for approval.
+
+
+2. Update your Property API DELETE route
+In app/api/properties/[id]/route.js, replace the DELETE handler with the updated version I provided. This adds admin permissions to delete any property regardless of ownership.
+What These Changes Address
+
+Session Termination: This is actually standard behavior - signing out clears the session entirely.
+Property Submission Feedback: The updated form submission handler now:
+
+Shows a success message indicating submission was successful
+Clearly communicates that the property needs approval
+Shows a follow-up message explaining the review process
+
+
+Multiple Clicks on Approval/Reject: The new admin page:
+
+Tracks which property IDs are currently being processed
+Disables buttons during processing
+Shows "Processing..." text on buttons being clicked
+Prevents multiple clicks causing multiple API calls
+
+
+3. Admin Property Deletion: Added:
+
+A new delete button in the admin interface
+A confirmation dialog to prevent accidental deletion
+API route modification to allow admins to delete any property
+Processing state tracking to prevent duplicate deletion requests
+
+
+
+These changes should address all the issues you've mentioned and create a more robust admin experience and clearer user feedback throughout the property submission flow.
+
+1
+
+
+// Updated handleSubmit function for PropertyAddForm.jsx
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  if (!session?.user) {
+    toast.error('You must be logged in to add a property');
+    router.push('/login');
+    return;
+  }
+  
+  setIsSubmitting(true);
+
+  try {
+    // Upload images first
+    const uploaded = [];
+    for (const file of images) {
+      const fd = new FormData();
+      fd.append('file', file);
+      
+      const res = await fetch('/api/upload', { 
+        method: 'POST', 
+        body: fd,
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        toast.error(`Image upload failed: ${errorData.error || 'Unknown error'}`);
+        setIsSubmitting(false);
+        return;
+      }
+      
+      const { url } = await res.json();
+      uploaded.push(url);
+    }
+
+    // Then create the property
+    const body = {
+      ...fields,
+      square_feet: num(fields.square_feet),
+      desk_capacity: num(fields.desk_capacity),
+      rooms: num(fields.rooms),
+      rates: {
+        daily: num(fields.rates.daily),
+        weekly: num(fields.rates.weekly),
+        monthly: num(fields.rates.monthly),
+      },
+      images: uploaded,
+      status: 'pending', // Set initial status to pending
+    };
+
+    const res = await fetch('/api/properties', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (res.ok) {
+      toast.success('Property submitted successfully! It is now pending approval.');
+      
+      // Show a more detailed success message with a small delay
+      setTimeout(() => {
+        toast.info('Our team will review your property listing and approve it shortly.');
+      }, 1000);
+      
+      router.push('/profile');
+    } else {
+      const { message = 'Something went wrong' } = await res.json();
+      toast.error(message);
+    }
+  } catch (error) {
+    console.error('Error adding property:', error);
+    toast.error('Failed to add property: ' + (error.message || 'Unknown error'));
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
+2
+
+// Updated handleApproval function for admin/page.jsx
+const handleApproval = async (id, status, notes = '') => {
+  try {
+    // Set loading state for this specific property
+    setProcessingIds(prev => [...prev, id]);
+    
+    const res = await fetch(`/api/properties/${id}/approve`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ status, notes })
+    });
+
+    if (res.ok) {
+      toast.success(`Property ${status === 'approved' ? 'approved' : 'rejected'} successfully`);
+      
+      // Remove from list
+      setProperties(properties.filter(p => p._id !== id));
+      
+      // Add a secondary message about notifications
+      if (status === 'approved') {
+        setTimeout(() => {
+          toast.info('The property owner has been notified of the approval.');
+        }, 1000);
+      } else if (status === 'rejected') {
+        setTimeout(() => {
+          toast.info('The property owner has been notified of the rejection.');
+        }, 1000);
+      }
+    } else {
+      const data = await res.json();
+      toast.error(data.message || 'Failed to update property');
+    }
+  } catch (error) {
+    console.error('Error approving property:', error);
+    toast.error('Something went wrong');
+  } finally {
+    // Remove from processing state regardless of outcome
+    setProcessingIds(prev => prev.filter(itemId => itemId !== id));
+  }
+};
+
+// Add this function to your admin/page.jsx component
+const handleDeleteProperty = async (id) => {
+  // Confirm deletion with the admin
+  const confirmed = window.confirm('Are you sure you want to permanently delete this property?');
+  
+  if (!confirmed) return;
+  
+  try {
+    // Set loading state for this specific property
+    setProcessingIds(prev => [...prev, id]);
+    
+    const res = await fetch(`/api/properties/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (res.ok) {
+      toast.success('Property permanently deleted');
+      
+      // Remove from list
+      setProperties(properties.filter(p => p._id !== id));
+    } else {
+      const data = await res.json();
+      toast.error(data.message || 'Failed to delete property');
+    }
+  } catch (error) {
+    console.error('Error deleting property:', error);
+    toast.error('Something went wrong');
+  } finally {
+    // Remove from processing state regardless of outcome
+    setProcessingIds(prev => prev.filter(itemId => itemId !== id));
+  }
+};
+
+
+3
+
+// Updated DELETE handler from app/api/properties/[id]/route.js
+export const DELETE = async (request, { params }) => {
+  try {
+    const { id } = params;
+    if (!id) return new Response('ID is required', { status: 400 });
+
+    const sessionUser = await getSessionUser();
+    if (!sessionUser?.user?.id) {
+      return new Response('User ID is required', { status: 401 });
+    }
+    const userId = sessionUser.user.id;
+    const isAdmin = sessionUser.user.isAdmin || false;
+
+    await connectDB();
+    const property = await Property.findById(id);
+
+    if (!property) return new Response('Property Not Found', { status: 404 });
+
+    // Allow delete if the user is the owner OR if the user is an admin
+    if (property.owner.toString() !== userId && !isAdmin) {
+      return new Response('Unauthorized', { status: 401 });
+    }
+
+    await property.deleteOne();
+
+    return new Response('Property Deleted', { status: 200 });
+  } catch (error) {
+    console.log(error);
+    return new Response('Something went wrong', { status: 500 });
+  }
+};

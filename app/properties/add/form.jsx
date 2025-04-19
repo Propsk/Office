@@ -132,8 +132,14 @@ export default function SimplePropertyForm() {
       });
 
       if (res.ok) {
-        toast.success('Workspace added successfully and pending approval');
-        router.push('/properties');
+        toast.success('Property submitted successfully! It is now pending approval.');
+        
+        // Show a more detailed success message with a small delay
+        setTimeout(() => {
+          toast.info('Our team will review your property listing and approve it shortly.');
+        }, 1000);
+        
+        router.push('/profile');
       } else {
         const { message = 'Something went wrong' } = await res.json();
         toast.error(message);

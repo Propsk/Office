@@ -28,17 +28,24 @@ export const DELETE = async (request, { params }) => {
     if (!id) return new Response('ID is required', { status: 400 });
 
     const sessionUser = await getSessionUser();
+    
     if (!sessionUser?.user?.id) {
       return new Response('User ID is required', { status: 401 });
     }
+    
     const userId = sessionUser.user.id;
+    // Make sure to properly get the admin status
+    const isAdmin = sessionUser.user.isAdmin === true;
 
     await connectDB();
     const property = await Property.findById(id);
 
     if (!property) return new Response('Property Not Found', { status: 404 });
 
-    if (property.owner.toString() !== userId) {
+    // Allow delete if the user is the owner OR if the user is an admin
+    const isOwner = property.owner.toString() === userId;
+    
+    if (!isOwner && !isAdmin) {
       return new Response('Unauthorized', { status: 401 });
     }
 

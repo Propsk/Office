@@ -7,14 +7,53 @@ import cloudinary from "@/config/cloudinary";
 export async function GET(request) {
   await connectDB();
 
+  const isAdminRequest = request.nextUrl.searchParams.get("admin") === "true";
+  
+  // Get the session user for admin verification
+  let isAdmin = false;
+  if (isAdminRequest) {
+    const sessionUser = await getSessionUser();
+    isAdmin = sessionUser?.user?.isAdmin || false;
+    
+    // If non-admin tries to access admin endpoint, return error
+    if (!isAdmin) {
+      return new Response(JSON.stringify({ message: "Unauthorized" }), { 
+        status: 401, 
+        headers: { 'Content-Type': 'application/json' } 
+      });
+    }
+  }
+
+  // Regular pagination parameters
   const page = parseInt(request.nextUrl.searchParams.get("page") || "1", 10);
   const pageSize = parseInt(request.nextUrl.searchParams.get("pageSize") || "6", 10);
   const skip = (page - 1) * pageSize;
 
-  const total = await Property.countDocuments();
-  const properties = await Property.find().skip(skip).limit(pageSize);
+  // Different queries for admin vs regular
+  let query = {};
+  let properties;
+  let total;
 
-  return new Response(JSON.stringify({ total, properties }), { status: 200 });
+  if (isAdmin) {
+    // Admins can see all properties
+    total = await Property.countDocuments();
+    properties = await Property.find()
+      .populate('owner', 'username email') // Include owner details
+      .skip(skip)
+      .limit(pageSize);
+  } else {
+    // Regular users only see approved properties
+    query = { status: "approved" };
+    total = await Property.countDocuments(query);
+    properties = await Property.find(query)
+      .skip(skip)
+      .limit(pageSize);
+  }
+
+  return new Response(JSON.stringify({ properties, total }), { 
+    status: 200,
+    headers: { 'Content-Type': 'application/json' }
+  });
 }
 
 // POST /api/properties

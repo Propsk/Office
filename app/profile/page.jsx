@@ -7,6 +7,7 @@ import profileDefault from "@/assets/images/profile.png";
 import { useEffect, useState } from "react";
 import Spinner from "@/components/Spinner";
 import { toast } from "react-toastify";
+import { deleteProperty } from "@/utils/propertyActions";
 
 const ProfilePage = () => {
   const { data: session } = useSession();
@@ -18,16 +19,23 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetcheUserProperties = async (userId) => {
+    const fetchUserProperties = async (userId) => {
       if (!userId) {
         return;
       }
       try {
-        const res = await fetch(`/api/properties/user/${userId}`);
+        // If user is admin, fetch all properties
+        const endpoint = session?.user?.isAdmin 
+          ? '/api/properties?admin=true'  // Use admin parameter
+          : `/api/properties/user/${userId}`;
+        
+        const res = await fetch(endpoint);
 
         if (res.status === 200) {
           const data = await res.json();
-          setProperties(data);
+          // For admin endpoint, we get { properties }
+          const propertiesData = session?.user?.isAdmin ? data.properties : data;
+          setProperties(propertiesData);
         }
       } catch (error) {
         console.log(error);
@@ -38,30 +46,24 @@ const ProfilePage = () => {
 
     // Fetch user properties when session is available
     if (session?.user?.id) {
-      fetcheUserProperties(session.user.id);
+      fetchUserProperties(session.user.id);
     }
   }, [session]);
 
   const handleDeleteProperty = async (propertyId) => {
-    const confirmed = window.confirm('Are you sure you want to delete this property?');
-
-    if(!confirmed) return;
-
-    try {
-      const res = await fetch(`/api/properties/${propertyId}`, { method: 'DELETE'});
-
-      if(res.status === 200) {
-        // Remove the property from state
-        const updatedProperties = properties.filter((property) => property._id !== propertyId);
-        setProperties(updatedProperties)
-        toast.success('Property Deleted')
-      } else {
-        toast.error('Failed to Delete property')
+    const property = properties.find(p => p._id === propertyId);
+    const propertyName = property ? property.name : 'this property';
+    
+    // Use the utility function for deletion
+    const success = await deleteProperty(
+      propertyId, 
+      propertyName,
+      // On success callback - remove property from list
+      () => {
+        const updatedProperties = properties.filter(property => property._id !== propertyId);
+        setProperties(updatedProperties);
       }
-    } catch (error) {
-      toast.error('Failed to Delete property')
-      console.log(error) 
-    }
+    );
   }
 
   return (
@@ -113,6 +115,15 @@ const ProfilePage = () => {
                     <div className="mt-2">
                       <p className="text-lg font-semibold">{property.name}</p>
                       <p className="text-gray-600">Address: {property.location.street} { property.location.city} {property.location.state} </p>
+                      
+                      {/* Show owner info if admin */}
+                      {session?.user?.isAdmin && property.owner && (
+                        <p className="text-sm text-gray-600 mt-1">
+                          Owner: {typeof property.owner === 'object' 
+                            ? property.owner.username || property.owner.email 
+                            : 'Unknown user'}
+                        </p>
+                      )}
                     </div>
                     <div className="mt-2">
                       <Link

@@ -5,6 +5,12 @@ import { generateMetadata } from '@/components/SEOconfig';
 // Locations data
 const locations = [
   {
+    name: 'Long Eaton',
+    description: 'Premium office space and coworking solutions in the heart of Long Eaton.',
+    image: '/location-long-eaton.jpg',
+    slug: 'long-eaton'
+  },
+  {
     name: 'Nottingham',
     description: 'Coworking and office space in the heart of Nottingham city center.',
     image: '/location-nottingham.jpg',

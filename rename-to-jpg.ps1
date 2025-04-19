@@ -10,7 +10,8 @@ $files = @(
     "C:\Users\sajid\Rent-Property\public\location-clifton.jpg",
     "C:\Users\sajid\Rent-Property\public\location-nottingham.jpg",
     "C:\Users\sajid\Rent-Property\public\location-ruddington.jpg",
-    "C:\Users\sajid\Rent-Property\public\location-wilford.jpg"
+    "C:\Users\sajid\Rent-Property\public\location-wilford.jpg",
+    "C:\Users\sajid\Rent-Property\public\location-long-eaton.jpg"
 )
 
 # Verify files exist before renaming

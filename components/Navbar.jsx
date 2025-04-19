@@ -270,6 +270,11 @@ const Navbar = () => {
           </div>
           <div id="mobile-locations-submenu" className="pl-4 hidden">
             <Link
+              href="/locations/long-eaton"
+              className="text-gray-300 block rounded-md px-3 py-2 text-sm font-medium"
+            >Long Eaton</Link>
+
+            <Link
               href="/locations/nottingham"
               className="text-gray-300 block rounded-md px-3 py-2 text-sm font-medium"
               >Nottingham</Link>

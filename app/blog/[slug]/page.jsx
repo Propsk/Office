@@ -1,7 +1,9 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import { generateMetadata as createMetadata } from '@/components/SEOconfig';
+import { useEffect, useState } from 'react';
+import { notFound, useRouter } from 'next/navigation';
 import { FaCalendar, FaUser, FaTags } from 'react-icons/fa';
 
 // This would come from your CMS or content files in production
@@ -132,35 +134,152 @@ const blogPosts = {
       <p>Want to try hot desking? Browse our available locations or contact us to learn more about our flexible workspace solutions.</p>
     `
   },
-  // Add more blog posts as needed
+  'long-eaton-office-space-guide': {
+    title: 'Why Choose Office Space in Long Eaton? A Local Business Guide',
+    description: 'Discover the benefits of renting office space and hot desks in Long Eaton. Excellent transport links, affordable rates, and a thriving local business community.',
+    date: 'April 18, 2025',
+    author: 'Sarah Johnson',
+    tags: ['Long Eaton', 'office space', 'hot desking', 'coworking', 'East Midlands'],
+    image: '/location-long-eaton.jpg',
+    content: `
+      <p class="lead text-xl text-gray-600 mb-8">
+        Located in the heart of the East Midlands, Long Eaton offers an ideal location for businesses looking for affordable, well-connected office space. Whether you're a freelancer, startup, or established company, here's why Long Eaton should be on your radar.
+      </p>
+      
+      <h2>Strategic Location &amp; Transport Links</h2>
+      <p>
+        Situated perfectly between Nottingham and Derby, Long Eaton provides businesses with a strategic base that offers the best of both cities without the premium costs. The town benefits from excellent transport connections:
+      </p>
+      <ul>
+        <li><strong>M1 Access</strong> - Just 5 minutes from Junction 25 of the M1, providing direct routes to Sheffield, Leeds, and London</li>
+        <li><strong>Railway Station</strong> - Long Eaton station offers regular services to Nottingham (10 mins), Derby (15 mins), and direct trains to London St Pancras</li>
+        <li><strong>Bus Services</strong> - Comprehensive bus network connecting to Nottingham, Derby, and surrounding villages</li>
+        <li><strong>East Midlands Airport</strong> - Only 15 minutes away, offering international connections for business travel</li>
+      </ul>
+      
+      <p>
+        This connectivity makes Long Eaton an ideal location for businesses that need to meet clients across the region or have team members commuting from different areas.
+      </p>
+      
+      <h2>Cost-Effective Office Solutions</h2>
+      <p>
+        One of Long Eaton's primary advantages is its cost-effectiveness. Office space and hot desking facilities in Long Eaton typically cost 30-40% less than equivalent spaces in central Nottingham or Derby, allowing businesses to:
+      </p>
+      <ul>
+        <li>Reduce overhead costs while maintaining a professional business address</li>
+        <li>Access larger workspace without the premium city center prices</li>
+        <li>Benefit from more affordable parking options</li>
+        <li>Enjoy lower overall business costs</li>
+      </ul>
+      
+      <p>
+        At RentOfficeSpace.co.uk, our Long Eaton facilities offer hot desks from just £15 per day and private offices from £350 per month - significantly less than you would pay in nearby cities.
+      </p>
+      
+      <h2>Local Amenities in Long Eaton</h2>
+      <p>
+        Long Eaton town centre provides all the amenities businesses and their employees need:
+      </p>
+      <ul>
+        <li><strong>High Street</strong> - Featuring banks, post office, and retail shops within walking distance</li>
+        <li><strong>Cafés &amp; Restaurants</strong> - Great options for lunch meetings or after-work gatherings, including independent cafés such as Elephants Village and Jaspers Café</li>
+        <li><strong>West Park</strong> - Beautiful green space perfect for lunchtime walks or outdoor meetings in summer</li>
+        <li><strong>Local Services</strong> - Easy access to printers, couriers, and other business services</li>
+        <li><strong>Trent College</strong> - Nearby educational institution providing potential talent and collaboration opportunities</li>
+      </ul>
+      
+      <h2>A Growing Business Community</h2>
+      <p>
+        Long Eaton has seen significant growth in its business community in recent years. The town is home to a diverse range of enterprises:
+      </p>
+      <ul>
+        <li>Creative and digital agencies</li>
+        <li>Professional services such as accountants, solicitors, and consultants</li>
+        <li>Manufacturing and engineering firms building on the town's industrial heritage</li>
+        <li>Retail businesses and hospitality venues</li>
+      </ul>
+      
+      <p>
+        This diverse business ecosystem creates opportunities for networking, collaboration, and finding local clients and suppliers.
+      </p>
+      
+      <h2>Office Space Options in Long Eaton</h2>
+      <p>
+        Long Eaton offers various workspace solutions to match different business needs:
+      </p>
+      <ul>
+        <li><strong>Hot Desking</strong> - Flexible day passes from £15/day for remote workers and freelancers</li>
+        <li><strong>Dedicated Desks</strong> - Your own permanent desk in a shared environment from £199/month</li>
+        <li><strong>Private Offices</strong> - Enclosed spaces for teams from £350/month</li>
+        <li><strong>Meeting Rooms</strong> - Professional spaces for client meetings and team gatherings</li>
+        <li><strong>Virtual Office Services</strong> - Business address and mail handling for remote workers</li>
+      </ul>
+      
+      <h2>Ready to Explore Office Space in Long Eaton?</h2>
+      <p>
+        At RentOfficeSpace.co.uk, we offer a range of flexible workspace solutions in Long Eaton to suit businesses of all sizes. Whether you need a desk for a day or a permanent office for your team, our modern, well-equipped facilities provide the perfect environment to help your business thrive.
+      </p>
+      
+      <div class="bg-blue-50 p-6 rounded-lg my-8">
+        <h3 class="text-xl font-bold mb-2">Our Long Eaton facilities include:</h3>
+        <ul>
+          <li>High-speed Wi-Fi and networking infrastructure</li>
+          <li>Modern, ergonomic furniture</li>
+          <li>Meeting rooms with presentation facilities</li>
+          <li>Kitchen and relaxation areas</li>
+          <li>Free parking for members</li>
+          <li>24/7 access for monthly members</li>
+          <li>Professional business address services</li>
+        </ul>
+      </div>
+      
+      <p>
+        Contact us today to arrange a tour of our Long Eaton workspace or to discuss how we can help find the perfect office solution for your business.
+      </p>
+    `
+  }
 };
 
-// Generate metadata for SEO
-export async function generateMetadata({ params }) {
-  const { slug } = params;
-  const post = blogPosts[slug];
-  
-  if (!post) {
-    return {};
-  }
-  
-  return createMetadata({
-    title: post.title,
-    description: post.description,
-    keywords: post.tags.join(', '),
-  });
-}
-
-// Generate static paths for all blog posts
-export async function generateStaticParams() {
-  return Object.keys(blogPosts).map(slug => ({
-    slug,
-  }));
-}
-
 export default function BlogPost({ params }) {
-  const { slug } = params;
-  const post = blogPosts[slug];
+  const [post, setPost] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  
+  useEffect(() => {
+    // Get the slug from params
+    const { slug } = params;
+    
+    // Check if the blog post exists
+    if (!blogPosts[slug]) {
+      return notFound();
+    }
+    
+    // Set the post
+    setPost(blogPosts[slug]);
+    setLoading(false);
+    
+    // Update the document title
+    document.title = blogPosts[slug].title + " | RentOfficeSpace.co.uk";
+    
+    // Add meta description
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute('content', blogPosts[slug].description);
+    } else {
+      const meta = document.createElement('meta');
+      meta.name = 'description';
+      meta.content = blogPosts[slug].description;
+      document.head.appendChild(meta);
+    }
+  }, [params]);
+  
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-700"></div>
+      </div>
+    );
+  }
   
   if (!post) {
     return notFound();

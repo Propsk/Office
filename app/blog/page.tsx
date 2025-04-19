@@ -4,6 +4,14 @@ import { generateMetadata } from '@/components/SEOconfig';
 
 // This would come from your CMS or content files in production
 const blogPosts = {
+  'long-eaton-office-space-guide': {
+    title: 'Why Choose Office Space in Long Eaton? A Local Business Guide',
+    description: 'Discover the benefits of renting office space and hot desks in Long Eaton. Excellent transport links, affordable rates, and a thriving local business community.',
+    date: 'April 18, 2025',
+    author: 'Sarah Johnson',
+    tags: ['Long Eaton', 'office space', 'hot desking', 'coworking', 'East Midlands'],
+    image: '/location-long-eaton.jpg',
+  },
   'benefits-of-coworking-spaces': {
     title: 'The Top 10 Benefits of Coworking Spaces for Remote Workers',
     description: 'Discover why coworking spaces are the perfect solution for remote workers looking for productivity, networking, and work-life balance.',

@@ -21,7 +21,7 @@ const LocationLanding = ({ location }) => {
   
   // Using .jpg consistently for all images
   useEffect(() => {
-    const locations = ['nottingham', 'derby', 'beeston', 'stapleford', 'west-bridgford', 'wilford', 'clifton', 'ruddington'];
+    const locations = ['long-eaton', 'nottingham', 'derby', 'beeston', 'stapleford', 'west-bridgford', 'wilford', 'clifton', 'ruddington'];
     
     // Create a map of location to image path
     const paths = {};
@@ -29,6 +29,9 @@ const LocationLanding = ({ location }) => {
     // Set all images to use .jpg extension
     for (const loc of locations) {
       paths[loc.toLowerCase()] = `/location-${loc.toLowerCase()}.jpg`;
+      // Also add space-separated version for "Long Eaton" etc.
+      const spaceVersion = loc.replace(/-/g, ' ').toLowerCase();
+      paths[spaceVersion] = `/location-${loc.toLowerCase()}.jpg`;
     }
     
     // Set default image path
@@ -39,6 +42,12 @@ const LocationLanding = ({ location }) => {
   
   // Location data mapping
   const locationData = {
+    'long eaton': {
+      title: 'Premium Office Space & Coworking in Long Eaton',
+      description: 'Modern, affordable workspace solutions in the heart of Long Eaton. From hot desks to private offices, we offer flexible options for freelancers, remote workers, and businesses of all sizes.',
+      amenities: ['High-speed Wi-Fi', 'Free tea & coffee', 'Meeting rooms', 'Reception services', '24/7 access', 'Free parking'],
+      nearbyPlaces: ['Long Eaton Train Station', 'Long Eaton High Street', 'West Park', 'Trent College', 'M1 Junction 25'],
+    },
     'nottingham': {
       title: 'Coworking & Hot Desks in Nottingham',
       description: 'Flexible workspace solutions in the heart of Nottingham. Daily, weekly, and monthly rates available.',

@@ -1,9 +1,12 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import { notFound } from 'next/navigation';
 import LocationLanding from '@/components/LocationLanding';
-import { generateMetadata as generateSEOMetadata } from '@/components/SEOconfig';
 
 // Valid locations list
 const validLocations = [
+  'long-eaton',
   'nottingham',
   'derby',
   'beeston',
@@ -22,43 +25,50 @@ function formatLocationName(location) {
     .join(' ');
 }
 
-// Generate metadata for each location page
-export async function generateMetadata({ params }) {
-  // In Next.js App Router, params is a promise in server components
-  // We need to await it properly
-  const locationParam = params.location;
-
-  if (!validLocations.includes(locationParam.toLowerCase())) {
-    return {};
+export default function LocationPage({ params }) {
+  const [locationName, setLocationName] = useState(null);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    // Get the location from params
+    const locationParam = params.location;
+    
+    // Check if location is valid
+    if (!validLocations.includes(locationParam.toLowerCase())) {
+      return notFound();
+    }
+    
+    // Format the location name
+    const formattedName = formatLocationName(locationParam);
+    setLocationName(formattedName);
+    setLoading(false);
+    
+    // Update document title
+    document.title = `Office Space & Coworking in ${formattedName} | RentOfficeSpace.co.uk`;
+    
+    // Update meta description
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute('content', `Find affordable hot desks, private offices and coworking space in ${formattedName}. Daily, weekly and monthly rates available.`);
+    } else {
+      const meta = document.createElement('meta');
+      meta.name = 'description';
+      meta.content = `Find affordable hot desks, private offices and coworking space in ${formattedName}. Daily, weekly and monthly rates available.`;
+      document.head.appendChild(meta);
+    }
+  }, [params]);
+  
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-700"></div>
+      </div>
+    );
   }
   
-  const locationName = formatLocationName(locationParam);
-  
-  return generateSEOMetadata({
-    title: `Office Space & Coworking in ${locationName}`,
-    description: `Find affordable hot desks, private offices and coworking space in ${locationName}. Daily, weekly and monthly rates available.`,
-    location: locationName,
-  });
-}
-
-// Generate static params for all locations
-export async function generateStaticParams() {
-  return validLocations.map(location => ({
-    location,
-  }));
-}
-
-export default async function LocationPage({ params }) {
-  // In Next.js App Router, params is a promise in server components
-  // We need to await it properly
-  const locationParam = params.location;
-  
-  // Check if location is valid
-  if (!validLocations.includes(locationParam.toLowerCase())) {
+  if (!locationName) {
     return notFound();
   }
-  
-  const locationName = formatLocationName(locationParam);
   
   return (
     <div>
